@@ -1,0 +1,322 @@
+<Window x:Class="CaptionOverlay.App.Settings.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:CaptionOverlay.App.Settings"
+        xmlns:models="clr-namespace:CaptionOverlay.App.Models"
+        Title="CaptionOverlay Settings"
+        Width="820" Height="680" MinWidth="640" MinHeight="480"
+        WindowStartupLocation="CenterScreen"
+        Icon="pack://application:,,,/Assets/app.ico"
+        Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
+    <DockPanel>
+        <!-- Status bar -->
+        <Border DockPanel.Dock="Bottom" Padding="12,6" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+            <TextBlock Text="{Binding StatusText}" TextTrimming="CharacterEllipsis" />
+        </Border>
+
+        <TabControl x:Name="Tabs" Margin="8" Padding="12">
+            <!-- ───────────── General ───────────── -->
+            <TabItem Header="General" x:Name="GeneralTab">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Startup" />
+                        <CheckBox Content="Start with Windows" IsChecked="{Binding GeneralStartWithWindows}" />
+                        <Border Style="{StaticResource WarningBox}" Visibility="{Binding StartupEntryWarning, Converter={StaticResource NullToCollapsed}}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding StartupEntryWarning}" TextWrapping="Wrap" />
+                                <Button Content="Point it to this copy" Command="{Binding FixStartupEntryCommand}" HorizontalAlignment="Left" Margin="0,6,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <CheckBox Content="Start listening when the app launches" IsChecked="{Binding GeneralStartListeningOnLaunch}" />
+                        <CheckBox Content="Tell me when a new version is available on GitHub (no automatic downloads)" IsChecked="{Binding GeneralCheckForUpdates}" />
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Transcripts" />
+                        <CheckBox Content="Save a transcript of every session automatically" IsChecked="{Binding TranscriptsAutoSave}" />
+                        <StackPanel Orientation="Horizontal" Margin="20,0,0,0" IsEnabled="{Binding TranscriptsAutoSave}">
+                            <CheckBox Content="SubRip (.srt)" IsChecked="{Binding TranscriptsSrt}" Margin="0,4,16,4" />
+                            <CheckBox Content="Plain text (.txt)" IsChecked="{Binding TranscriptsTxt}" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Folder (empty = Documents\CaptionOverlay)" />
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="Open" Command="{Binding OpenTranscriptsFolderCommand}" Margin="6,0,0,0" />
+                            <TextBox Text="{Binding TranscriptsFolder, UpdateSourceTrigger=LostFocus}" />
+                        </DockPanel>
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Diagnostics" />
+                        <CheckBox Content="Include caption text in log files (debugging only)" IsChecked="{Binding GeneralLogTranscriptText}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ───────────── Audio ───────────── -->
+            <TabItem Header="Audio" x:Name="AudioTab">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Captured output" />
+                        <TextBlock Style="{StaticResource Hint}" Text="CaptionOverlay captions whatever this output device plays (system-wide loopback)." />
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="Refresh" Command="{Binding RefreshDevicesCommand}" Margin="6,0,0,0" />
+                            <ComboBox ItemsSource="{Binding Devices}" SelectedValuePath="Value" SelectedValue="{Binding AudioDeviceId}" />
+                        </DockPanel>
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Voice activity detection" />
+                        <CheckBox Content="Detect speech (recommended)" IsChecked="{Binding AudioUseVad}" />
+                        <TextBlock Style="{StaticResource Hint}" Text="Turn this off for music-heavy content where speech is not detected: audio is then transcribed in fixed 5-second windows." />
+
+                        <Expander Header="Advanced" Margin="0,10,0,0">
+                            <StackPanel Margin="0,6,0,0">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{Binding AudioSpeechThreshold, StringFormat='Speech threshold: {0:F2}'}" />
+                                <Slider Minimum="0.2" Maximum="0.9" Value="{Binding AudioSpeechThreshold}" SmallChange="0.05" LargeChange="0.1" />
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{Binding AudioSilenceThreshold, StringFormat='Silence threshold: {0:F2}'}" />
+                                <Slider Minimum="0.1" Maximum="0.8" Value="{Binding AudioSilenceThreshold}" SmallChange="0.05" LargeChange="0.1" />
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{Binding AudioEndSilenceMs, StringFormat='Silence that ends a sentence: {0:F0} ms'}" />
+                                <Slider Minimum="300" Maximum="1500" Value="{Binding AudioEndSilenceMs}" SmallChange="50" LargeChange="100" IsSnapToTickEnabled="True" TickFrequency="50" />
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{Binding AudioMaxUtteranceSec, StringFormat='Longest sentence before a forced cut: {0:F0} s'}" />
+                                <Slider Minimum="5" Maximum="25" Value="{Binding AudioMaxUtteranceSec}" IsSnapToTickEnabled="True" TickFrequency="1" />
+                            </StackPanel>
+                        </Expander>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ───────────── Engine ───────────── -->
+            <TabItem Header="Engine" x:Name="EngineTab">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Transcription engine" />
+                        <ComboBox ItemsSource="{Binding EngineModes}" SelectedValuePath="Value" SelectedValue="{Binding EngineMode}" />
+
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Spoken language" />
+                        <ComboBox ItemsSource="{Binding LanguageChoices}" SelectedValuePath="Value" SelectedValue="{Binding EngineLanguage}" />
+                        <TextBlock Style="{StaticResource Hint}" Text="Choosing the language is faster and more accurate than auto-detection. Language-specific models (e.g. German) always use their language." />
+
+                        <StackPanel Visibility="{Binding IsLocalMode, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Model" />
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="Manage models…" Click="ManageModels_OnClick" Margin="6,0,0,0" />
+                                <ComboBox ItemsSource="{Binding ModelChoices}" SelectedValuePath="Value" SelectedValue="{Binding EngineModelId}" />
+                            </DockPanel>
+                            <CheckBox Content="Show text while someone is still speaking (partial results)" IsChecked="{Binding EngineEnablePartials}" Margin="0,10,0,4" />
+                            <Expander Header="Advanced" Margin="0,6,0,0">
+                                <StackPanel Margin="0,6,0,0">
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="{Binding EnginePartialIntervalMs, StringFormat='Partial update interval: {0:F0} ms'}" />
+                                    <Slider Minimum="300" Maximum="2000" Value="{Binding EnginePartialIntervalMs}" IsSnapToTickEnabled="True" TickFrequency="100" />
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Separate model for partial results" />
+                                    <ComboBox ItemsSource="{Binding PartialModelChoices}" SelectedValuePath="Value" SelectedValue="{Binding EnginePartialModelId}" />
+                                    <TextBlock Style="{StaticResource Hint}" Text="A small model (tiny/base) for partials reduces load; it is kept in memory in addition to the main model." />
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Processor" />
+                                    <ComboBox ItemsSource="{Binding GpuChoices}" SelectedValuePath="Value" SelectedValue="{Binding EngineGpu}" />
+                                    <TextBlock Style="{StaticResource Hint}" Text="Changing the processor takes effect after restarting CaptionOverlay." />
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+
+                        <StackPanel Visibility="{Binding IsApiMode, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,10,0,0" Text="API mode sends speech segments to the provider configured on the API tab." />
+                            <Button Content="Open API settings" HorizontalAlignment="Left" Click="OpenApiTab_OnClick" Margin="0,6,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ───────────── Models ───────────── -->
+            <TabItem Header="Models" x:Name="ModelsTab" DataContext="{Binding Models}">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top">
+                        <TextBlock Text="{Binding HardwareText}" TextWrapping="Wrap" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" />
+                        <TextBlock Text="{Binding RecommendationText}" TextWrapping="Wrap" Margin="0,4,0,8" FontWeight="SemiBold" />
+                        <Border Style="{StaticResource WarningBox}" Visibility="{Binding Message, Converter={StaticResource NullToCollapsed}}">
+                            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+                        </Border>
+                    </StackPanel>
+                    <Border DockPanel.Dock="Bottom" Padding="0,8,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Custom model — name:" VerticalAlignment="Center" />
+                            <TextBox Text="{Binding CustomName, UpdateSourceTrigger=PropertyChanged}" Width="160" Margin="6,0" />
+                            <TextBlock Text="forced language (optional):" VerticalAlignment="Center" />
+                            <TextBox Text="{Binding CustomLanguage, UpdateSourceTrigger=PropertyChanged}" Width="40" Margin="6,0" />
+                            <Button Content="Add model file…" Command="{Binding AddCustomModelCommand}" />
+                        </StackPanel>
+                    </Border>
+                    <ListBox ItemsSource="{Binding Items}" HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Focusable" Value="False" />
+                                <Setter Property="Padding" Value="4,6" />
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type models:ModelItemViewModel}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" />
+                                            <Border Style="{StaticResource Badge}" Background="#FF2E7D32" Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Text="in use" Foreground="White" />
+                                            </Border>
+                                            <Border Style="{StaticResource Badge}" Background="#FF1565C0" Visibility="{Binding IsRecommended, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Text="recommended for this PC" Foreground="White" />
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Details}" Style="{StaticResource Hint}" Margin="0" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding Notes}" Style="{StaticResource Hint}" Margin="0" Visibility="{Binding Notes, Converter={StaticResource NullToCollapsed}}" />
+                                        <ProgressBar Height="6" Margin="0,4,0,0" Maximum="1" Value="{Binding Progress, Mode=OneWay}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
+                                        <TextBlock Text="{Binding StateText}" Margin="0,2,0,0" />
+                                        <TextBlock Text="{Binding BenchmarkText}" Margin="0,2,0,0" Visibility="{Binding BenchmarkText, Converter={StaticResource NullToCollapsed}}" />
+                                    </StackPanel>
+                                    <WrapPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal">
+                                        <Button Content="{Binding DownloadLabel}" Command="{Binding DownloadCommand}" Visibility="{Binding CanDownload, Converter={StaticResource BoolToVis}}" Style="{StaticResource RowButton}" />
+                                        <Button Content="Pause" Command="{Binding PauseCommand}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" Style="{StaticResource RowButton}" />
+                                        <Button Content="Cancel" Command="{Binding CancelCommand}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" Style="{StaticResource RowButton}" />
+                                        <Button Content="Use" Command="{Binding UseCommand}" Visibility="{Binding CanUse, Converter={StaticResource BoolToVis}}" Style="{StaticResource RowButton}" />
+                                        <Button Content="Benchmark" Command="{Binding BenchmarkCommand}" Visibility="{Binding CanUse, Converter={StaticResource BoolToVis}}" Style="{StaticResource RowButton}" />
+                                        <Button Content="Delete" Command="{Binding DeleteCommand}" Visibility="{Binding CanUse, Converter={StaticResource BoolToVis}}" Style="{StaticResource RowButton}" />
+                                    </WrapPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </TabItem>
+
+            <!-- ───────────── API ───────────── -->
+            <TabItem Header="API" x:Name="ApiTab">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="OpenAI-compatible transcription API" />
+                        <TextBlock Style="{StaticResource Hint}" Text="Use this when your PC is too slow for local models. Speech segments are uploaded to the provider." />
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Provider" />
+                        <ComboBox ItemsSource="{Binding ApiProviders}" SelectedValuePath="Value" SelectedValue="{Binding ApiProvider}" />
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Base URL" />
+                        <TextBox Text="{Binding ApiBaseUrl, UpdateSourceTrigger=LostFocus}" />
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Model" />
+                        <TextBox Text="{Binding ApiModel, UpdateSourceTrigger=LostFocus}" />
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="API key" />
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="Save key" Click="SaveKey_OnClick" Margin="6,0,0,0" />
+                            <PasswordBox x:Name="ApiKeyBox" />
+                        </DockPanel>
+                        <TextBlock Style="{StaticResource Hint}" Text="{Binding ApiKeyForDisplay}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Content="Test connection" Command="{Binding TestConnectionCommand}" />
+                            <TextBlock Text="{Binding ApiTestResult}" VerticalAlignment="Center" Margin="10,0,0,0" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <CheckBox Content="Also send partial (in-progress) results — increases cost roughly 5–10×" IsChecked="{Binding ApiEnablePartials}" Margin="0,12,0,0" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ───────────── Overlay ───────────── -->
+            <TabItem Header="Overlay" x:Name="OverlayTab">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Move / resize overlay…" Command="{Binding EditOverlayPositionCommand}" />
+                            <Button Content="Reset style" Command="{Binding ResetOverlayStyleCommand}" Margin="8,0,0,0" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Text" />
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Font" />
+                        <ComboBox ItemsSource="{Binding FontFamilies}" SelectedItem="{Binding OverlayFontFamily}" />
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="{Binding OverlayFontSize, StringFormat='Size: {0:F0}'}" />
+                        <Slider Minimum="12" Maximum="80" Value="{Binding OverlayFontSize}" IsSnapToTickEnabled="True" TickFrequency="1" />
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="{Binding OverlayFontWeight, StringFormat='Weight: {0:F0}'}" />
+                        <Slider Minimum="300" Maximum="900" Value="{Binding OverlayFontWeight}" IsSnapToTickEnabled="True" TickFrequency="100" />
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,8,0">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Text color (#AARRGGBB)" />
+                                <DockPanel>
+                                    <Border DockPanel.Dock="Right" Width="24" Margin="6,0,0,0" BorderBrush="Gray" BorderThickness="1" Background="{Binding OverlayTextColor, Converter={StaticResource ColorToBrush}}" />
+                                    <TextBox Text="{Binding OverlayTextColor, UpdateSourceTrigger=LostFocus}" />
+                                </DockPanel>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Outline color" />
+                                <DockPanel>
+                                    <Border DockPanel.Dock="Right" Width="24" Margin="6,0,0,0" BorderBrush="Gray" BorderThickness="1" Background="{Binding OverlayOutlineColor, Converter={StaticResource ColorToBrush}}" />
+                                    <TextBox Text="{Binding OverlayOutlineColor, UpdateSourceTrigger=LostFocus}" />
+                                </DockPanel>
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="{Binding OverlayOutlineThickness, StringFormat='Outline thickness: {0:F1}'}" />
+                        <Slider Minimum="0" Maximum="6" Value="{Binding OverlayOutlineThickness}" IsSnapToTickEnabled="True" TickFrequency="0.5" />
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Background" />
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Background color" />
+                        <DockPanel>
+                            <Border DockPanel.Dock="Right" Width="24" Margin="6,0,0,0" BorderBrush="Gray" BorderThickness="1" Background="{Binding OverlayBackgroundColor, Converter={StaticResource ColorToBrush}}" />
+                            <TextBox Text="{Binding OverlayBackgroundColor, UpdateSourceTrigger=LostFocus}" />
+                        </DockPanel>
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="{Binding OverlayBackgroundOpacity, StringFormat='Opacity: {0:P0}'}" />
+                        <Slider Minimum="0" Maximum="1" Value="{Binding OverlayBackgroundOpacity}" SmallChange="0.05" LargeChange="0.1" />
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Behaviour" />
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="{Binding OverlayLinesShown, StringFormat='Lines shown: {0:F0}'}" />
+                        <Slider Minimum="1" Maximum="6" Value="{Binding OverlayLinesShown}" IsSnapToTickEnabled="True" TickFrequency="1" />
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="{Binding OverlayFadeTimeoutSec, StringFormat='Hide after {0:F0} s without speech (0 = never)'}" />
+                        <Slider Minimum="0" Maximum="60" Value="{Binding OverlayFadeTimeoutSec}" IsSnapToTickEnabled="True" TickFrequency="1" />
+                        <TextBlock Style="{StaticResource Hint}" Text="The overlay cannot appear above games in exclusive fullscreen mode. Use borderless or windowed fullscreen." />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ───────────── Hotkeys ───────────── -->
+            <TabItem Header="Hotkeys" x:Name="HotkeysTab">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="Global hotkeys" />
+                    <TextBlock Style="{StaticResource Hint}" Text="Click a field and press the key combination (with Ctrl, Alt, Shift or Win). Backspace clears it." />
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="Move / resize overlay (edit mode)" />
+                    <TextBox Text="{Binding HotkeysToggleEditMode}" PreviewKeyDown="Hotkey_OnPreviewKeyDown" IsReadOnlyCaretVisible="False" />
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="Pause / resume captions" />
+                    <TextBox Text="{Binding HotkeysPauseResume}" PreviewKeyDown="Hotkey_OnPreviewKeyDown" />
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="Clear overlay" />
+                    <TextBox Text="{Binding HotkeysClearOverlay}" PreviewKeyDown="Hotkey_OnPreviewKeyDown" />
+                    <Border Style="{StaticResource WarningBox}" Visibility="{Binding HotkeyErrors, Converter={StaticResource NullToCollapsed}}">
+                        <TextBlock Text="{Binding HotkeyErrors}" TextWrapping="Wrap" />
+                    </Border>
+                </StackPanel>
+            </TabItem>
+
+            <!-- ───────────── About ───────────── -->
+            <TabItem Header="About" x:Name="AboutTab">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="{Binding VersionText}" FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding RuntimeText}" Style="{StaticResource Hint}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="Check for updates" Command="{Binding CheckUpdatesCommand}" />
+                            <Button Content="Releases page" Command="{Binding OpenReleasePageCommand}" Margin="8,0,0,0" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding UpdateText}" Margin="0,4,0,0" FontWeight="SemiBold" Visibility="{Binding UpdateText, Converter={StaticResource NullToCollapsed}}" />
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Privacy" />
+                        <TextBlock TextWrapping="Wrap">
+                            In <Bold>Local</Bold> mode, audio never leaves this computer: Whisper runs on your CPU/GPU.
+                            In <Bold>API</Bold> mode, detected speech segments are sent to the provider you configured.
+                            API keys are encrypted for your Windows user (DPAPI) and never written to logs or settings.json.
+                            Logs never contain caption text unless you turn that on for debugging.
+                        </TextBlock>
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Diagnostics" />
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Open log folder" Command="{Binding OpenLogsFolderCommand}" />
+                            <Button Content="Export diagnostics (zip to Desktop)" Command="{Binding ExportDiagnosticsCommand}" Margin="8,0,0,0" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding DiagnosticsResult}" TextWrapping="Wrap" Margin="0,6,0,0" />
+
+                        <TextBlock Style="{StaticResource SectionHeader}" Text="Credits" />
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource Hint}"
+                                   Text="whisper.cpp / Whisper.net (MIT), OpenAI Whisper models (MIT), Silero VAD (MIT), ONNX Runtime (MIT), NAudio (MIT), H.NotifyIcon (MIT), CommunityToolkit.Mvvm (MIT), Serilog (Apache-2.0). Model licenses are listed per model on the Models tab." />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

@@ -24,6 +24,79 @@ public sealed class AppSettings
     public TranscriptSettings Transcripts { get; set; } = new();
 
     public GeneralSettings General { get; set; } = new();
+
+    /// <summary>
+    /// Replaces missing or out-of-range values (hand-edited or damaged files) with safe defaults,
+    /// so a bad settings file can never produce e.g. an invisible overlay or a VAD that never triggers.
+    /// </summary>
+    public AppSettings Sanitize()
+    {
+        var defaults = new AppSettings();
+        Audio ??= defaults.Audio;
+        Engine ??= defaults.Engine;
+        Api ??= defaults.Api;
+        Overlay ??= defaults.Overlay;
+        Hotkeys ??= defaults.Hotkeys;
+        Transcripts ??= defaults.Transcripts;
+        General ??= defaults.General;
+
+        if (Audio.SpeechThreshold is < 0.1f or > 0.95f)
+        {
+            Audio.SpeechThreshold = defaults.Audio.SpeechThreshold;
+        }
+        if (Audio.SilenceThreshold < 0.05f || Audio.SilenceThreshold > Audio.SpeechThreshold)
+        {
+            Audio.SilenceThreshold = Math.Min(defaults.Audio.SilenceThreshold, Audio.SpeechThreshold);
+        }
+        if (Audio.EndSilenceMs is < 200 or > 5000)
+        {
+            Audio.EndSilenceMs = defaults.Audio.EndSilenceMs;
+        }
+        if (Audio.MaxUtteranceSec is < 3 or > 30)
+        {
+            Audio.MaxUtteranceSec = defaults.Audio.MaxUtteranceSec;
+        }
+
+        if (string.IsNullOrWhiteSpace(Engine.Language))
+        {
+            Engine.Language = defaults.Engine.Language;
+        }
+        if (Engine.PartialIntervalMs is < 200 or > 10000)
+        {
+            Engine.PartialIntervalMs = defaults.Engine.PartialIntervalMs;
+        }
+
+        var o = Overlay;
+        var d = defaults.Overlay;
+        if (string.IsNullOrWhiteSpace(o.FontFamily))
+        {
+            o.FontFamily = d.FontFamily;
+        }
+        if (o.FontSize is < 8 or > 120)
+        {
+            o.FontSize = d.FontSize;
+        }
+        if (o.FontWeight is < 100 or > 950)
+        {
+            o.FontWeight = d.FontWeight;
+        }
+        o.TextColor = string.IsNullOrWhiteSpace(o.TextColor) ? d.TextColor : o.TextColor;
+        o.OutlineColor = string.IsNullOrWhiteSpace(o.OutlineColor) ? d.OutlineColor : o.OutlineColor;
+        o.BackgroundColor = string.IsNullOrWhiteSpace(o.BackgroundColor) ? d.BackgroundColor : o.BackgroundColor;
+        o.OutlineThickness = Math.Clamp(o.OutlineThickness, 0, 10);
+        o.BackgroundOpacity = Math.Clamp(o.BackgroundOpacity, 0, 1);
+        if (o.LinesShown is < 1 or > 8)
+        {
+            o.LinesShown = d.LinesShown;
+        }
+        if (o.DefaultWidthFraction is < 0.15 or > 1)
+        {
+            o.DefaultWidthFraction = d.DefaultWidthFraction;
+        }
+        o.FadeTimeoutSec = Math.Clamp(o.FadeTimeoutSec, 0, 600);
+        o.Placements ??= [];
+        return this;
+    }
 }
 
 public sealed class AudioSettings
@@ -102,7 +175,8 @@ public sealed class OverlaySettings
 
     public int LinesShown { get; set; } = 2;
 
-    public double Width { get; set; } = 1000;
+    /// <summary>Default overlay width as a fraction of the monitor work area (until the user resizes it).</summary>
+    public double DefaultWidthFraction { get; set; } = 0.6;
 
     /// <summary>Hide the overlay after this many seconds without new text (0 = never).</summary>
     public double FadeTimeoutSec { get; set; } = 8;
@@ -113,16 +187,17 @@ public sealed class OverlaySettings
     public string? LastMonitor { get; set; }
 }
 
-/// <summary>Position relative to the monitor work area (0..1), so it survives resolution/DPI changes.</summary>
+/// <summary>
+/// Overlay position as fractions (0..1) of the monitor work area, so it survives resolution and DPI
+/// changes. The overlay grows upwards, so its bottom edge is the anchor.
+/// </summary>
 public sealed class OverlayPlacement
 {
     public double Left { get; set; }
 
-    public double Top { get; set; }
+    public double Bottom { get; set; }
 
     public double Width { get; set; }
-
-    public double Height { get; set; }
 }
 
 public sealed class HotkeySettings

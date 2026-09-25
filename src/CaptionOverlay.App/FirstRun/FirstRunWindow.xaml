@@ -1,0 +1,77 @@
+<Window x:Class="CaptionOverlay.App.FirstRun.FirstRunWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Welcome to CaptionOverlay"
+        Width="620" Height="520" ResizeMode="CanMinimize"
+        WindowStartupLocation="CenterScreen"
+        Icon="pack://application:,,,/Assets/app.ico"
+        Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
+    <DockPanel Margin="24">
+        <TextBlock DockPanel.Dock="Top" FontSize="20" FontWeight="SemiBold" Text="Live captions for everything your PC plays" />
+        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Hint}" Margin="0,4,0,16"
+                   Text="Three quick steps. Nothing is installed system-wide; models are stored in your user profile." />
+
+        <DockPanel DockPanel.Dock="Bottom" Margin="0,16,0,0">
+            <Button DockPanel.Dock="Left" Content="Skip setup" Command="{Binding SkipCommand}" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Back" Command="{Binding BackCommand}" IsEnabled="{Binding CanGoBack}" MinWidth="80" />
+                <Button Content="{Binding NextLabel}" Command="{Binding NextCommand}" MinWidth="80" Margin="8,0,0,0" IsDefault="True" FontWeight="SemiBold" />
+            </StackPanel>
+        </DockPanel>
+
+        <Grid>
+            <!-- Step 1: language -->
+            <StackPanel Visibility="{Binding Step, Converter={StaticResource EqualsToVisible}, ConverterParameter=0}">
+                <TextBlock Style="{StaticResource SectionHeader}" Text="1 · Which language will you mostly listen to?" />
+                <ComboBox ItemsSource="{Binding Languages}" SelectedValuePath="Value" SelectedValue="{Binding Language}" />
+                <TextBlock Style="{StaticResource Hint}" Text="Picking a language makes captions faster and more accurate. For German, a specially fine-tuned model is available." />
+            </StackPanel>
+
+            <!-- Step 2: engine -->
+            <StackPanel Visibility="{Binding Step, Converter={StaticResource EqualsToVisible}, ConverterParameter=1}">
+                <TextBlock Style="{StaticResource SectionHeader}" Text="2 · Where should speech be recognized?" />
+                <TextBlock Style="{StaticResource Hint}" Text="{Binding HardwareText}" />
+                <TextBlock TextWrapping="Wrap" Margin="0,4,0,8" Text="{Binding RecommendationText}" />
+                <RadioButton Content="On this PC (private, free, needs a model download)" IsChecked="{Binding UseLocal}" Margin="0,4" />
+                <ComboBox ItemsSource="{Binding CandidateModels}" SelectedValuePath="Value" SelectedValue="{Binding SelectedModelId}"
+                          Margin="22,2,0,8" IsEnabled="{Binding UseLocal}" />
+                <RadioButton Content="Online API (for slow PCs; audio is sent to the provider)" IsChecked="{Binding UseApi}" Margin="0,4" />
+                <Grid Margin="22,2,0,0" IsEnabled="{Binding UseApi}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Provider" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <ComboBox Grid.Column="1" Grid.ColumnSpan="2" ItemsSource="{Binding ApiProviders}" SelectedValuePath="Value" SelectedValue="{Binding ApiProvider}" />
+                    <TextBlock Grid.Row="1" Text="API key" VerticalAlignment="Center" Margin="0,6,8,0" />
+                    <PasswordBox Grid.Row="1" Grid.Column="1" x:Name="KeyBox" Margin="0,6,0,0" />
+                    <Button Grid.Row="1" Grid.Column="2" Content="Save key" Click="SaveKey_OnClick" Margin="6,6,0,0" />
+                </Grid>
+            </StackPanel>
+
+            <!-- Step 3: download / test -->
+            <StackPanel Visibility="{Binding Step, Converter={StaticResource EqualsToVisible}, ConverterParameter=2}">
+                <TextBlock Style="{StaticResource SectionHeader}" Text="3 · Getting ready" />
+                <StackPanel Visibility="{Binding UseLocal, Converter={StaticResource BoolToVis}}">
+                    <ProgressBar Height="10" Maximum="1" Value="{Binding DownloadProgress, Mode=OneWay}" />
+                    <TextBlock Text="{Binding DownloadText}" Margin="0,6,0,0" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0" Visibility="{Binding IsReady, Converter={StaticResource BoolToVis}}">
+                        <Button Content="Benchmark this model" Command="{Binding BenchmarkCommand}" />
+                        <TextBlock Text="{Binding BenchmarkText}" VerticalAlignment="Center" Margin="10,0,0,0" TextWrapping="Wrap" MaxWidth="380" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Visibility="{Binding UseApi, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding ApiResult}" TextWrapping="Wrap" />
+                    <Button Content="Test again" Command="{Binding TestApiCommand}" HorizontalAlignment="Left" Margin="0,8,0,0" />
+                </StackPanel>
+                <TextBlock Style="{StaticResource Hint}" Margin="0,20,0,0"
+                           Text="After you click Finish, captions start and the overlay is shown with a yellow frame: drag it where you want it, then click Done. Press Ctrl+Alt+C at any time to move it again." />
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+</Window>

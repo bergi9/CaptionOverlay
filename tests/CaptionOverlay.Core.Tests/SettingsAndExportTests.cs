@@ -16,7 +16,7 @@ public sealed class SettingsTests : IDisposable
         var settings = new AppSettings();
         settings.Engine.Mode = EngineMode.Api;
         settings.Engine.Language = "de";
-        settings.Overlay.Placements["\\\\.\\DISPLAY2"] = new OverlayPlacement { Left = 0.1, Top = 0.8, Width = 0.5, Height = 0.1 };
+        settings.Overlay.Placements["\\\\.\\DISPLAY2"] = new OverlayPlacement { Left = 0.1, Bottom = 0.9, Width = 0.5 };
         store.Save(settings);
         secrets.Set(SecretStore.ApiKeyName("groq"), "gsk_supersecret");
 
@@ -97,5 +97,30 @@ public class ExportTests
         {
             Directory.Delete(dir, true);
         }
+    }
+}
+
+public class SettingsSanitizeTests
+{
+    [Fact]
+    public void Zeroed_values_are_replaced_with_defaults()
+    {
+        var s = new AppSettings();
+        s.Audio.SpeechThreshold = 0;
+        s.Audio.EndSilenceMs = 0;
+        s.Engine.PartialIntervalMs = 0;
+        s.Overlay.FontSize = 0;
+        s.Overlay.FontWeight = 0;
+        s.Overlay.TextColor = "";
+        s.Overlay.LinesShown = 0;
+        s.Sanitize();
+        var d = new AppSettings();
+        s.Audio.SpeechThreshold.Should().Be(d.Audio.SpeechThreshold);
+        s.Audio.EndSilenceMs.Should().Be(d.Audio.EndSilenceMs);
+        s.Engine.PartialIntervalMs.Should().Be(d.Engine.PartialIntervalMs);
+        s.Overlay.FontSize.Should().Be(d.Overlay.FontSize);
+        s.Overlay.FontWeight.Should().Be(d.Overlay.FontWeight);
+        s.Overlay.TextColor.Should().Be(d.Overlay.TextColor);
+        s.Overlay.LinesShown.Should().Be(d.Overlay.LinesShown);
     }
 }

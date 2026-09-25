@@ -329,7 +329,13 @@ public sealed class CaptionPipeline : IAsyncDisposable
     private async Task ProcessAsync(ChannelReader<AudioChunk> reader, bool isLive, CancellationToken ct)
     {
         var frontEnd = _frontEnd!;
-        bool clockStarted = false;
+        // Live sources: the session timeline starts now. Loopback delivers nothing while the PC is silent,
+        // so waiting for the first packet would shift every timestamp (SRT export) by the initial silence.
+        // Capture start-up latency is well within the silence-injection tolerance.
+        if (isLive)
+        {
+            frontEnd.StartClock(_session.Elapsed);
+        }
         Task<bool>? waitTask = null;
         try
         {
@@ -337,16 +343,10 @@ public sealed class CaptionPipeline : IAsyncDisposable
             {
                 while (reader.TryRead(out var chunk))
                 {
-                    if (!clockStarted)
-                    {
-                        // Start the silence clock at the first packet: capture start-up latency is not silence.
-                        frontEnd.StartClock(_session.Elapsed - chunk.Duration);
-                        clockStarted = true;
-                    }
                     frontEnd.Push(chunk, OnFrame);
                 }
 
-                if (isLive && clockStarted
+                if (isLive
                     && Stopwatch.GetElapsedTime(Interlocked.Read(ref _lastDataTicks)) > TimeSpan.FromMilliseconds(100))
                 {
                     frontEnd.InjectSilenceIfIdle(_session.Elapsed, OnFrame);

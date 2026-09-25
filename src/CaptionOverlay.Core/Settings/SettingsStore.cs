@@ -44,7 +44,7 @@ public sealed class SettingsStore
                     AllowTrailingCommas = true,
                 }) as JsonObject ?? [];
                 Migrate(node);
-                return node.Deserialize<AppSettings>(JsonOptions) ?? new AppSettings();
+                return (node.Deserialize<AppSettings>(JsonOptions) ?? new AppSettings()).Sanitize();
             }
             catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
             {

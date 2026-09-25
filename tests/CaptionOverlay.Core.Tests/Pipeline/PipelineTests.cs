@@ -185,3 +185,69 @@ public class LocalWhisperIntegrationTests
         }
     }
 }
+
+public class LiveTimelineTests
+{
+    /// <summary>A live source that stays silent (no callbacks, like loopback) before delivering a WAV in one burst.</summary>
+    private sealed class DelayedLiveSource(string wav, TimeSpan delay) : IAudioSource
+    {
+        private CancellationTokenSource? _cts;
+
+        public NAudio.Wave.WaveFormat? SourceFormat => null;
+
+        public bool IsLive => true;
+
+        public event Action<AudioChunk>? SamplesAvailable;
+
+        public event Action<string>? StatusChanged
+        {
+            add { }
+            remove { }
+        }
+
+        public event Action? Completed;
+
+        public Task StartAsync(CancellationToken ct)
+        {
+            _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            var token = _cts.Token;
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(delay, token);
+                SamplesAvailable?.Invoke(new AudioChunk(WavIO.ReadMono16k(wav), 16000, 1));
+                Completed?.Invoke();
+            }, token);
+            return Task.CompletedTask;
+        }
+
+        public Task StopAsync() => _cts?.CancelAsync() ?? Task.CompletedTask;
+
+        public ValueTask DisposeAsync()
+        {
+            _cts?.Dispose();
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    [Fact]
+    public async Task Initial_silence_of_a_live_source_counts_towards_timestamps()
+    {
+        var labels = Fixtures.Labels("speech_en.wav");
+        var pipeline = new CaptionPipeline();
+        var lines = new List<CaptionLine>();
+        pipeline.LineCommitted += l => lines.Add(l);
+        var config = new PipelineConfig
+        {
+            AudioSourceFactory = () => new DelayedLiveSource(Fixtures.Path("speech_en.wav"), TimeSpan.FromSeconds(1.5)),
+            VadFactory = () => new SileroVad(Fixtures.SileroModel),
+            EnablePartials = false,
+        };
+        await pipeline.StartAsync(config, _ => Task.FromResult(new TranscriberSet(new FakeTranscriber())), TestContext.Current.CancellationToken);
+        await pipeline.WaitForSourceCompletionAsync(TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(20), TestContext.Current.CancellationToken);
+        await pipeline.StopAsync(drain: true);
+
+        lines.Should().HaveCount(labels.Count);
+        // ~1.4 s of injected silence (1.5 s minus the 100 ms tolerance) precedes the file's own timeline.
+        lines[0].Start.TotalMilliseconds.Should().BeApproximately(1400 + labels[0].StartMs - 300, 300);
+    }
+}

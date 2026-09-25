@@ -101,6 +101,13 @@ public sealed class LocalWhisperTranscriber : ITranscriber
                 // Loading can be lazy: building a processor forces the model to actually load.
                 using var probe = factory.CreateBuilder().Build();
             }
+            catch (Exception ex) when (ex is FileNotFoundException or DllNotFoundException or BadImageFormatException)
+            {
+                // The model file exists (checked above), so this is the native whisper.cpp library itself.
+                throw new TranscriptionException(
+                    "The Whisper runtime (native libraries in the 'runtimes' folder next to the app) could not be loaded. " +
+                    "Re-extract the full CaptionOverlay zip.", ex) { IsFatal = true };
+            }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 throw new TranscriptionException(InvalidModelMessage, ex) { IsFatal = true };

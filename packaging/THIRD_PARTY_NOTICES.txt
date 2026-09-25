@@ -1,0 +1,46 @@
+CaptionOverlay includes or depends on the following third-party components.
+Full license texts are available at the linked project pages.
+
+.NET Runtime and Windows Presentation Foundation
+  Copyright (c) .NET Foundation and Contributors. MIT License.
+  https://github.com/dotnet/runtime  https://github.com/dotnet/wpf
+
+whisper.cpp / ggml
+  Copyright (c) 2023-2026 The ggml authors. MIT License.
+  https://github.com/ggml-org/whisper.cpp
+
+Whisper.net
+  Copyright (c) Sandro Hanea. MIT License.
+  https://github.com/sandrohanea/whisper.net
+
+OpenAI Whisper (model architecture and original weights)
+  Copyright (c) 2022 OpenAI. MIT License.
+  https://github.com/openai/whisper
+  Models are not bundled; they are downloaded by the user. Each model's license is shown in the model manager.
+
+Silero VAD (silero_vad.onnx, bundled)
+  Copyright (c) 2020-present Silero Team. MIT License.
+  https://github.com/snakers4/silero-vad
+
+ONNX Runtime
+  Copyright (c) Microsoft Corporation. MIT License.
+  https://github.com/microsoft/onnxruntime
+
+NAudio
+  Copyright (c) Mark Heath and contributors. MIT License.
+  https://github.com/naudio/NAudio
+
+H.NotifyIcon
+  Copyright (c) havendv. MIT License.
+  https://github.com/HavenDV/H.NotifyIcon
+
+CommunityToolkit.Mvvm
+  Copyright (c) .NET Foundation and Contributors. MIT License.
+  https://github.com/CommunityToolkit/dotnet
+
+Serilog, Serilog.Sinks.File, Serilog.Extensions.Logging
+  Copyright (c) Serilog Contributors. Apache License 2.0.
+  https://github.com/serilog/serilog
+
+Microsoft.Extensions.Logging.Abstractions, System.Security.Cryptography.ProtectedData
+  Copyright (c) .NET Foundation and Contributors. MIT License.

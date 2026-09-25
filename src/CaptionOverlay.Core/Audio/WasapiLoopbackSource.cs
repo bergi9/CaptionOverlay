@@ -241,16 +241,28 @@ public sealed class WasapiLoopbackSource : IAudioSource
             }
             try
             {
-                await Task.Delay(300, _ct).ConfigureAwait(false);
-                lock (_gate)
+                // Devices are often not ready immediately (resume from sleep, driver reload): retry with back-off.
+                for (int attempt = 1; ; attempt++)
                 {
-                    if (!_running)
+                    await Task.Delay(attempt == 1 ? 300 : 2000, _ct).ConfigureAwait(false);
+                    try
                     {
-                        return;
+                        lock (_gate)
+                        {
+                            if (!_running)
+                            {
+                                return;
+                            }
+                            _logger.LogInformation("Restarting loopback capture: {Reason} (attempt {Attempt})", reason, attempt);
+                            StopCaptureLocked();
+                            StartCaptureLocked();
+                        }
+                        break;
                     }
-                    _logger.LogInformation("Restarting loopback capture: {Reason}", reason);
-                    StopCaptureLocked();
-                    StartCaptureLocked();
+                    catch (Exception ex) when (ex is not OperationCanceledException && attempt < 5)
+                    {
+                        _logger.LogWarning(ex, "Restarting loopback capture failed; will retry");
+                    }
                 }
             }
             catch (OperationCanceledException)

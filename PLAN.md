@@ -501,3 +501,19 @@ Later options (post-v1): per-application capture (Windows process loopback API, 
 4. Never commit model files or API keys. Add `*.bin`, `*.part`, and `models/` to `.gitignore`.
 5. Prefer small, reviewable commits with a one-line summary of what changed and how it was tested.
 6. When a decision in section 14 needs to be made, write a short note in `docs/decisions.md` (ADR style) and continue with the stated default.
+
+---
+
+## 16. Implementation notes (verified at scaffold time, 2026-09)
+
+Differences from the text above, found while implementing. Details and rationale in `docs/decisions.md`; per-milestone test status in `docs/testing.md`.
+
+- **Versions used:** .NET 10 (LTS) `net10.0-windows`, NAudio 3.1.0, Whisper.net 1.9.1 (+ Runtime, Runtime.Vulkan), Microsoft.ML.OnnxRuntime 1.30.0, CommunityToolkit.Mvvm 8.4.2, H.NotifyIcon.Wpf 2.4.1, Serilog 4.4, xunit.v3 4.0.1.
+- **Solution file** is `CaptionOverlay.slnx` (new .NET 10 default), with central package management.
+- **Tests:** AwesomeAssertions replaces FluentAssertions (v8 is commercially licensed); xUnit v3 runs on Microsoft.Testing.Platform (`global.json`), `dotnet test --project …`.
+- **NAudio 3:** `WasapiLoopbackCapture` is obsolete → `WasapiRecorderBuilder().WithLoopbackCapture()`; device notifications via `MMDeviceEnumerator.CreateNotificationClient()` events. `IAudioSource.SamplesAvailable` carries an `AudioChunk` (samples + rate + channels) because the format can change on a device switch; the interface also has `IsLive`, `StatusChanged`, `Completed`.
+- **Whisper.net 1.9:** API as described (`WhisperFactory.FromPath`, `CreateBuilder()…Build()`, `ProcessAsync`, `RuntimeOptions.RuntimeLibraryOrder` / `LoadedLibrary`). Loading is lazy; a probe processor is built at load time so bad files fail early.
+- **Silero VAD:** shipped model is v6.2 with the v5 tensor layout (`input`/`state`/`sr` → `output`/`stateN`) plus 64-sample context; stored in `Core/Assets`.
+- **Packaging:** single-file publish breaks Whisper.net's native loader → portable **folder** zip (212 MB extracted / 85 MB zipped; the < 150 MB aim is not reachable with self-contained WPF + Vulkan). CUDA runtime not shipped in v1.
+- **Segmenter events** carry a `Sequence` on `PartialSnapshot` (for out-of-order handling) and an extra `UtteranceDiscarded` event.
+- **Overlay placement** is stored per monitor as `{left, bottom, width}` fractions of the work area (bottom-anchored).

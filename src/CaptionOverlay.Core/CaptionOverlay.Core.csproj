@@ -28,4 +28,14 @@
     <InternalsVisibleTo Include="CaptionOverlay.Core.Tests" />
   </ItemGroup>
 
+  <!--
+    Whisper.net runtime packages add native libraries for every OS/architecture as content items, which
+    flow to every project referencing Core. We ship win-x64 only: drop the rest (~60 MB, mostly Linux Vulkan).
+  -->
+  <Target Name="TrimForeignWhisperRuntimes" BeforeTargets="AssignTargetPaths">
+    <ItemGroup>
+      <None Remove="@(None)" Condition="$([System.String]::Copy('%(None.FullPath)').Contains('\linux-')) Or $([System.String]::Copy('%(None.FullPath)').Contains('\osx-')) Or $([System.String]::Copy('%(None.FullPath)').Contains('\win-x86\')) Or $([System.String]::Copy('%(None.FullPath)').Contains('\win-arm64\'))" />
+    </ItemGroup>
+  </Target>
+
 </Project>

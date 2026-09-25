@@ -176,8 +176,10 @@ public class LocalWhisperIntegrationTests
         await File.WriteAllTextAsync(path, "this is not a ggml model", TestContext.Current.CancellationToken);
         try
         {
-            var act = () => LocalWhisperTranscriber.ValidateModelAsync(path, TestContext.Current.CancellationToken);
+            var act = () => LocalWhisperTranscriber.ValidateModelAsync(path, ct: TestContext.Current.CancellationToken);
             await act.Should().ThrowAsync<TranscriptionException>().WithMessage("*GGML*");
+            // Validation must not pin the process-wide native runtime to CPU (it used to, which kept later models off the GPU).
+            Whisper.net.LibraryLoader.RuntimeOptions.RuntimeLibraryOrder.Should().Contain(Whisper.net.LibraryLoader.RuntimeLibrary.Vulkan);
         }
         finally
         {

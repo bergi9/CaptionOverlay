@@ -245,7 +245,7 @@ public sealed partial class ModelManagerViewModel : ObservableObject, IDisposabl
         Message = "Checking model file…";
         try
         {
-            await LocalWhisperTranscriber.ValidateModelAsync(dialog.FileName);
+            await LocalWhisperTranscriber.ValidateModelAsync(dialog.FileName, _app.Settings.Engine.Gpu);
         }
         catch (Exception ex)
         {

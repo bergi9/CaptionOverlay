@@ -1,0 +1,65 @@
+{
+  "generator": "captionoverlay-cli fixtures fetch-de",
+  "generatorVersion": 1,
+  "dataset": "FluidInference/fleurs-full",
+  "revision": "66b5a017a55ac0dbdc38b313f10f4e141399550f",
+  "subset": "de_de",
+  "license": "CC-BY-4.0",
+  "selected": [
+    "de_de_0004",
+    "de_de_0005",
+    "de_de_0011",
+    "de_de_0015",
+    "de_de_0016",
+    "de_de_0017",
+    "de_de_0019",
+    "de_de_0739"
+  ],
+  "files": [
+    {
+      "path": "clips/de_de_0004.wav",
+      "sha256": "8bd38645c6abbb987e601e98b8c7ead49a81d849972fa26e658fe7345fab019f",
+      "size": 316844
+    },
+    {
+      "path": "clips/de_de_0005.wav",
+      "sha256": "88988cc0b268d4a2fdef8163fcbaec565a3e7eccf2a81bef8b3afb03c2ba0eba",
+      "size": 268844
+    },
+    {
+      "path": "clips/de_de_0011.wav",
+      "sha256": "6b166e1351e4589ca0f12c66bdedfb9198550516732b187c99080dc6e9759594",
+      "size": 539564
+    },
+    {
+      "path": "clips/de_de_0015.wav",
+      "sha256": "aa3244abf70f568876e33d19f1821d0f715d78664974852567cc4147b4becb29",
+      "size": 220844
+    },
+    {
+      "path": "clips/de_de_0016.wav",
+      "sha256": "89b754a6c9a39d87485a2313555b445883931d5fc55557ed486f352e40013b1a",
+      "size": 276524
+    },
+    {
+      "path": "clips/de_de_0017.wav",
+      "sha256": "bbeece89cda6097ee1d73ef092e752f0de578bca6179dd1ffde8d46088c0b423",
+      "size": 165164
+    },
+    {
+      "path": "clips/de_de_0019.wav",
+      "sha256": "a10993b0dd470cb61f151d7380c3ea2f793779362e229ae48271f4bb0a07a070",
+      "size": 282284
+    },
+    {
+      "path": "clips/de_de_0739.wav",
+      "sha256": "05ccba3e9ec58cbdcfdbd39875ba9b52a4ffdecb2aff4ed2505f7015bc086349",
+      "size": 115244
+    },
+    {
+      "path": "clips/transcripts.json",
+      "sha256": "96ec3b5cd8c1bea2a52fa9eb230989f3eab62bfc9addc4dc6abfe85b5e91d37e",
+      "size": 2312
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "base-q5_1": {
+    "measuredAt": "2026-09-25",
+    "runtime": "GPU (Vulkan)",
+    "aggregateWer": 0.2344,
+    "realTimeFactor": 0.0164,
+    "clipWer": {
+      "de_de_0004": 0.0952,
+      "de_de_0005": 0.3125,
+      "de_de_0011": 0.25,
+      "de_de_0015": 0,
+      "de_de_0016": 0.1875,
+      "de_de_0017": 0.25,
+      "de_de_0019": 0.5714,
+      "de_de_0739": 0.1667
+    },
+    "endToEndWer": 0.2109
+  },
+  "large-v3-turbo-german-q5_0": {
+    "measuredAt": "2026-09-25",
+    "runtime": "GPU (Vulkan)",
+    "aggregateWer": 0.0859,
+    "realTimeFactor": 0.0276,
+    "clipWer": {
+      "de_de_0004": 0,
+      "de_de_0005": 0,
+      "de_de_0011": 0.0625,
+      "de_de_0015": 0,
+      "de_de_0016": 0,
+      "de_de_0017": 0,
+      "de_de_0019": 0.5,
+      "de_de_0739": 0.3333
+    },
+    "endToEndWer": 0.1016
+  },
+  "small-q5_1": {
+    "measuredAt": "2026-09-25",
+    "runtime": "GPU (Vulkan)",
+    "aggregateWer": 0.125,
+    "realTimeFactor": 0.0245,
+    "clipWer": {
+      "de_de_0004": 0.0952,
+      "de_de_0005": 0.0625,
+      "de_de_0011": 0.0938,
+      "de_de_0015": 0.0909,
+      "de_de_0016": 0,
+      "de_de_0017": 0.1667,
+      "de_de_0019": 0.5,
+      "de_de_0739": 0
+    },
+    "endToEndWer": 0.1484
+  },
+  "tiny-q5_1": {
+    "measuredAt": "2026-09-25",
+    "runtime": "GPU (Vulkan)",
+    "aggregateWer": 0.3672,
+    "realTimeFactor": 0.0137,
+    "clipWer": {
+      "de_de_0004": 0.2857,
+      "de_de_0005": 0.625,
+      "de_de_0011": 0.3438,
+      "de_de_0015": 0.0909,
+      "de_de_0016": 0.25,
+      "de_de_0017": 0.3333,
+      "de_de_0019": 0.6429,
+      "de_de_0739": 0.3333
+    },
+    "endToEndWer": 0.3516
+  }
+}

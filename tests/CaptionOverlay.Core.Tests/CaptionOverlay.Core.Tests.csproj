@@ -24,4 +24,10 @@
     <None Include="..\fixtures\**\*" LinkBase="fixtures" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- German FLEURS fixture tooling, shared with the CLI (`fixtures fetch-de`). -->
+  <ItemGroup>
+    <Compile Include="..\..\src\CaptionOverlay.Cli\Fixtures\GermanComposite.cs" Link="German\Shared\GermanComposite.cs" />
+    <Compile Include="..\..\src\CaptionOverlay.Cli\Fixtures\FixtureManifest.cs" Link="German\Shared\FixtureManifest.cs" />
+  </ItemGroup>
+
 </Project>

@@ -7,7 +7,7 @@ public sealed class CliException(string message) : Exception(message);
 /// <summary>Tiny argument parser: <c>command [positional...] [--flag value | --switch]</c>.</summary>
 public sealed class CliArgs
 {
-    private static readonly HashSet<string> Switches = ["help", "verbose", "realtime", "no-vad", "no-partials", "cpu"];
+    private static readonly HashSet<string> Switches = ["help", "verbose", "realtime", "no-vad", "no-partials", "cpu", "force"];
 
     public string? Command { get; private init; }
 

@@ -18,7 +18,7 @@ jobs:
         with:
           global-json-file: global.json
       - name: Test
-        run: dotnet test --solution CaptionOverlay.slnx -c Release
+        run: dotnet test --solution CaptionOverlay.slnx -c Release -- --filter-not-trait "Category=RequiresModel"
       - name: Package
         shell: pwsh
         run: ./scripts/package.ps1 -Version "${{ github.ref_name }}"

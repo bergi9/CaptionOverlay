@@ -77,10 +77,14 @@ public sealed class LocalWhisperTranscriber : ITranscriber
 
     /// <summary>Loads the model (slow: seconds for large models). Throws <see cref="TranscriptionException"/> on invalid files.</summary>
     public static Task<LocalWhisperTranscriber> LoadAsync(
-        LocalWhisperOptions options, GpuPreference gpu, ILogger? logger = null, CancellationToken ct = default)
+        LocalWhisperOptions options, GpuPreference gpu, ILogger? logger = null, CancellationToken ct = default) =>
+        LoadCoreAsync(options, gpu, useGpu: gpu != GpuPreference.CpuOnly, logger, ct);
+
+    private static Task<LocalWhisperTranscriber> LoadCoreAsync(
+        LocalWhisperOptions options, GpuPreference runtimePreference, bool useGpu, ILogger? logger, CancellationToken ct)
     {
         logger ??= NullLogger.Instance;
-        ConfigureRuntime(gpu);
+        ConfigureRuntime(runtimePreference);
         return Task.Run(() =>
         {
             if (!File.Exists(options.ModelPath))
@@ -97,7 +101,7 @@ public sealed class LocalWhisperTranscriber : ITranscriber
             WhisperFactory factory;
             try
             {
-                factory = WhisperFactory.FromPath(options.ModelPath, new WhisperFactoryOptions { UseGpu = gpu != GpuPreference.CpuOnly });
+                factory = WhisperFactory.FromPath(options.ModelPath, new WhisperFactoryOptions { UseGpu = useGpu });
                 // Loading can be lazy: building a processor forces the model to actually load.
                 using var probe = factory.CreateBuilder().Build();
             }
@@ -120,10 +124,14 @@ public sealed class LocalWhisperTranscriber : ITranscriber
         }, ct);
     }
 
-    /// <summary>Validates that a file loads as a Whisper model (for custom model import).</summary>
-    public static async Task ValidateModelAsync(string path, CancellationToken ct = default)
+    /// <summary>
+    /// Validates that a file loads as a Whisper model (for custom model import). The check runs on the CPU, but
+    /// <paramref name="runtimePreference"/> still picks the process-wide native runtime if nothing was loaded yet:
+    /// validating with a CPU-only runtime order would keep all later models off the GPU until a restart.
+    /// </summary>
+    public static async Task ValidateModelAsync(string path, GpuPreference runtimePreference = GpuPreference.Auto, CancellationToken ct = default)
     {
-        var t = await LoadAsync(new LocalWhisperOptions { ModelPath = path }, GpuPreference.CpuOnly, null, ct).ConfigureAwait(false);
+        var t = await LoadCoreAsync(new LocalWhisperOptions { ModelPath = path }, runtimePreference, useGpu: false, null, ct).ConfigureAwait(false);
         await t.DisposeAsync().ConfigureAwait(false);
     }
 

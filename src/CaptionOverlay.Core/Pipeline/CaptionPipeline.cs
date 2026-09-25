@@ -415,7 +415,7 @@ public sealed class CaptionPipeline : IAsyncDisposable
                 scheduler.OfferPartial(partial);
                 break;
             case FinalUtterance final:
-                if (_vadDisabled && HallucinationFilter.Rms(final.Samples) < 0.001f)
+                if (_vadDisabled && HallucinationFilter.Rms(final.Samples) < HallucinationFilter.SilentRms)
                 {
                     // Fixed-window mode without VAD: skip (near-)digital silence entirely.
                     scheduler.CancelUtterance(final.UtteranceId);

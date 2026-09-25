@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using CaptionOverlay.Cli.Fixtures;
 using CaptionOverlay.Core.Audio;
 using CaptionOverlay.Core.Captions;
 using CaptionOverlay.Core.Diagnostics;
@@ -29,6 +30,8 @@ public static class Commands
           models                                List catalog models and what is installed
           download <id>                         Download a catalog model (resumable, SHA-256 verified)
           hardware                              Show detected hardware and the recommended model
+          fixtures fetch-de [--out tests/fixtures/de] [--revision <hash>] [--force] [--write-composite <path.wav>]
+                                                Download the German FLEURS test clips (pinned revision)
 
         Options: --verbose (debug logging to stderr). API key may also come from CAPTIONOVERLAY_API_KEY.
         """);
@@ -43,7 +46,8 @@ public static class Commands
         "models" => Task.FromResult(Models()),
         "download" => DownloadAsync(args, loggers, ct),
         "hardware" => Task.FromResult(Hardware()),
-        _ => throw new CliException($"unknown command '{args.Command}' (try --help)"),
+        "fixtures" => FixturesAsync(args, ct),
+        _ =>throw new CliException($"unknown command '{args.Command}' (try --help)"),
     };
 
     private static int Devices()
@@ -331,6 +335,31 @@ public static class Commands
             Console.WriteLine($"[{lang}] recommended: {rec.ModelId}{(rec.SuggestApi ? " (or API mode)" : "")} — {rec.Reason}");
         }
         return 0;
+    }
+
+    private static async Task<int> FixturesAsync(CliArgs args, CancellationToken ct)
+    {
+        string sub = args.RequirePositional(0, "fixtures subcommand (fetch-de)");
+        if (sub != "fetch-de")
+        {
+            throw new CliException($"unknown fixtures subcommand '{sub}' (expected fetch-de)");
+        }
+        string output = args.Get("out") ?? Path.Combine(FindRepoRoot(), "tests", "fixtures", "de");
+        using var http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
+        var fetcher = new GermanFixtureFetcher(http, Console.Error);
+        return await fetcher.RunAsync(output, args.Get("revision") ?? GermanFixtureFetcher.DefaultRevision, args.Has("force"), args.Get("write-composite"), ct);
+    }
+
+    private static string FindRepoRoot()
+    {
+        for (var dir = new DirectoryInfo(Environment.CurrentDirectory); dir is not null; dir = dir.Parent)
+        {
+            if (File.Exists(Path.Combine(dir.FullName, "CaptionOverlay.slnx")))
+            {
+                return dir.FullName;
+            }
+        }
+        throw new CliException("run from inside the repository or pass --out <folder>");
     }
 
     private static ResolvedModel ResolveModel(string idOrPath, ModelCatalog catalog, ModelStore store)

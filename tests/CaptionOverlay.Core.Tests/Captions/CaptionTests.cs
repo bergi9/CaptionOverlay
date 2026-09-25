@@ -123,6 +123,14 @@ public class HallucinationFilterTests
     }
 
     [Fact]
+    public void Drops_any_text_on_inaudible_audio()
+    {
+        Apply("Vielen Dank.", rms: 0f).Reason.Should().Be("no audible signal");
+        Apply("Vielen Dank.", rms: 0.0005f).Keep.Should().BeFalse();
+        Apply("Vielen Dank.", rms: 0.05f).Keep.Should().BeTrue();
+    }
+
+    [Fact]
     public void Drops_low_confidence_on_low_energy_audio()
     {
         Apply("irgendwas", rms: 0.003f, prob: 0.2f).Keep.Should().BeFalse();

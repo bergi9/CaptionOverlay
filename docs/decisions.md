@@ -52,3 +52,24 @@ Short records of decisions taken while implementing `PLAN.md`. Newest last.
 
 ## ADR-013 — Remote catalog source
 - Remote catalog URL: `https://raw.githubusercontent.com/bergi9/whisper-live-caption/main/catalog/models.json` (4 s timeout). Used only if valid and `version` ≥ bundled; entries are validated (id/repo/file patterns, 64-hex SHA-256, no `.en` models, `https://huggingface.co` only). Until the repository is public/pushed the fetch returns 404 and the bundled catalog is used.
+
+## ADR-014 — German test fixtures: commit 8 unchanged FLEURS clips, derive everything else in memory
+- **Context:** `GERMAN_TEST_FIXTURES_PLAN.md`: German audio with known transcripts/timings for segmenter, SRT and WER tests. Source: FLEURS `de_de` via the Hugging Face dataset `FluidInference/fleurs-full`, pinned to revision `66b5a017…`, CC-BY-4.0.
+- **Decision:** `captionoverlay-cli fixtures fetch-de` selects 8 clips deterministically and writes `tests/fixtures/de` (clips byte-for-byte unchanged, `clips/transcripts.json`, `manifest.json` with SHA-256, `ATTRIBUTION.md`). **Committed** (2.08 MiB of WAV), so CI runs offline. The composite, its 48 kHz stereo version, the reference SRT/cues and the 20 s silence are built in memory by `GermanComposite` (`src/CaptionOverlay.Cli/Fixtures`, linked into the test project, not part of Core).
+- **Not downsampled:** the clips are already 16 kHz mono PCM16, Whisper's and Silero's native format. 8 kHz / 8-bit / lossy codecs would save ~1 MB but cut the 4–8 kHz band (s, f, sch, z), so WER would measure the damaged fixture. FLAC would need a new dependency. If the fixtures ever exceed 5 MB: gitignore the WAVs, keep manifest + transcripts, and let CI run `fixtures fetch-de` with a cache keyed on the manifest hash.
+- **Selection details found while implementing:**
+  - Transcripts are not fully clean: 11 lines end with a stray `.x`, 15 contain quotes. Clips with such transcripts are skipped (they would count as errors for every model). Hyphens are allowed; the WER normalization turns them into spaces.
+  - The SHA-256 of every clip is in the tree API listing (`lfs.oid`); downloads are verified against it.
+  - The plan's expected long clip `de_de_0000` has only 9.6 s of speech (not force-cut); `0007` and `0009` contain pauses ≥ `EndSilenceMs`. The first clip passing the VAD checks is `de_de_0011` (16.9 s). Normal: `0004 0005 0015 0016 0017 0019` (`0010` has the `.x` artefact). Short: `de_de_0739` (3.6 s).
+  - VAD check: with force cuts disabled (`MaxUtteranceSec` = 600) a clip must be exactly one utterance; the long clip must also be force-cut with the default options. Speech spans come from the same run (clip padded with 1 s of silence, span = utterance ± pre-/post-roll).
+  - Merge pair (0.3 s gap) = the two normal clips with the shortest speech, so the merged utterance stays below `MaxUtteranceSec` (`GermanComposite.Arrange` throws otherwise). Other normal clips fill slots 1–3 and 8 in id order.
+- **Test adjustments vs the plan:** the backpressure variant of the SRT test uses a fixed 250 ms delay per job instead of "2× real time" (which would take > 2 min for the 69 s composite). The long clip is one cue in the reference SRT; the test expects it split into ≥ 2 lines. Tolerances as planned (±200 ms boundaries, ±50 ms 48 kHz vs 16 kHz, ±500 ms SRT starts).
+- **WER baseline:** `tests/fixtures/de/wer-baseline.json`, refreshed by running the model tests with `CAPTIONOVERLAY_UPDATE_WER_BASELINE=1`. Measured on Vulkan; the CPU runtime gives slightly different text (e.g. base-q5_1 end-to-end 32 % on CPU vs 21 % on Vulkan), so the end-to-end limit (baseline + 5 points) is only asserted for models with a threshold.
+
+## ADR-015 — Hallucination filter drops any text on inaudible audio
+- **Finding:** `large-v3-turbo-german-q5_0` returns "Vielen Dank." for 10 s of digital silence. Adding it to the phrase list would also drop real "Vielen Dank." captions.
+- **Decision:** `HallucinationFilter` drops any text when the utterance RMS is below `SilentRms` = 0.001 (≈ −60 dBFS; nothing audible, so any text is invented). In normal operation the VAD rarely lets such audio through, so this is a safety net; the fixed-window (no-VAD) path already skipped audio below the same level.
+
+## ADR-016 — Custom-model validation must not pin the native runtime to CPU
+- **Bug (found by the German model tests running after `Invalid_model_file_gives_clear_error`):** `LocalWhisperTranscriber.ValidateModelAsync` loaded with `GpuPreference.CpuOnly`, which also set the process-wide runtime order (chosen once per process). Importing a custom model before any model had loaded (e.g. in API mode) kept all later models on the CPU until restart.
+- **Fix:** validation runs with `UseGpu = false` but configures the runtime order from the user's GPU preference (`ValidateModelAsync(path, settings.Engine.Gpu)`). Regression assertion in `Invalid_model_file_gives_clear_error`.

@@ -26,6 +26,9 @@ dotnet build CaptionOverlay.slnx
 dotnet test --project tests/CaptionOverlay.Core.Tests
 ```
 
+Tests that need a Whisper model skip themselves if it isn't installed; CI excludes them with
+`-- --filter-not-trait "Category=RequiresModel"`. See [`docs/testing.md`](docs/testing.md).
+
 ```bash
 dotnet run --project src/CaptionOverlay.App
 ```
@@ -45,7 +48,7 @@ Pushing a `v*` tag runs `.github/workflows/release.yml`, which attaches the zip 
 dotnet run --project src/CaptionOverlay.Cli -- live --model tiny-q5_1 --lang en
 ```
 
-Other commands: `devices`, `record`, `segment`, `bench`, `models`, `download`, `hardware` (`--help`).
+Other commands: `devices`, `record`, `segment`, `bench`, `models`, `download`, `hardware`, `fixtures fetch-de` (`--help`).
 
 ## Layout
 | Path | Contents |
@@ -53,7 +56,7 @@ Other commands: `devices`, `record`, `segment`, `bench`, `models`, `download`, `
 | `src/CaptionOverlay.Core` | Pipeline (audio, VAD, segmenter, transcription, captions, models, settings). No WPF. |
 | `src/CaptionOverlay.App` | WPF app: overlay, tray, hotkeys, settings, model manager, first-run wizard |
 | `src/CaptionOverlay.Cli` | Developer harness |
-| `tests/` | xUnit v3 tests and WAV fixtures |
+| `tests/` | xUnit v3 tests and WAV fixtures. `tests/fixtures/de` holds German clips from [FLEURS](https://arxiv.org/abs/2205.12446) (Google, CC-BY-4.0, see its `ATTRIBUTION.md`) |
 | `catalog/models.json` | Model catalog (bundled and fetched from this repo at startup) |
 | `docs/` | `decisions.md` (ADRs), `testing.md` (test status per milestone) |
 

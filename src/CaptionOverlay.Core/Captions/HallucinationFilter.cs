@@ -24,6 +24,9 @@ public sealed partial class HallucinationFilter
     /// <summary>Below this RMS (≈ -40 dBFS) an utterance is considered low-energy.</summary>
     public const float LowRms = 0.01f;
 
+    /// <summary>Below this RMS (≈ -60 dBFS) nothing is audible, so any text is a hallucination.</summary>
+    public const float SilentRms = 0.001f;
+
     private readonly Dictionary<string, List<string>> _phrases;
 
     public HallucinationFilter(IReadOnlyDictionary<string, IReadOnlyList<string>>? phrases = null)
@@ -40,6 +43,12 @@ public sealed partial class HallucinationFilter
         if (!HasLetters(text))
         {
             return FilterResult.Drop("empty or tags only");
+        }
+
+        // Whisper still "hears" phrases such as "Vielen Dank." in digital silence (found with the German fine-tune).
+        if (input.AudioRms < SilentRms)
+        {
+            return FilterResult.Drop("no audible signal");
         }
 
         string normalized = Normalize(text);

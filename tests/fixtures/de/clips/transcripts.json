@@ -1,0 +1,74 @@
+[
+  {
+    "id": "de_de_0004",
+    "file": "de_de_0004.wav",
+    "text": "die höhle befindet sich auf der spitze eines der berge nördlich von mekka und ist vom rest der welt völlig isoliert",
+    "durationSec": 9.9,
+    "speechStartSec": 1.572,
+    "speechEndSec": 8.344,
+    "bucket": "normal"
+  },
+  {
+    "id": "de_de_0005",
+    "file": "de_de_0005.wav",
+    "text": "dieses sediment war nötig um sandbänke und strände zu bilden die als lebensräume für wildtiere dienten",
+    "durationSec": 8.4,
+    "speechStartSec": 1.476,
+    "speechEndSec": 7.672,
+    "bucket": "normal"
+  },
+  {
+    "id": "de_de_0011",
+    "file": "de_de_0011.wav",
+    "text": "nextgen ist ein system von dem die faa behauptet dass es flugzeugen erlauben würde kürzere strecken zu fliegen und jedes jahr millionen gallonen an treibstoff zu sparen und die kohlenstoffemissionen zu reduzieren",
+    "durationSec": 16.86,
+    "speechStartSec": 0.708,
+    "speechEndSec": 15.096,
+    "bucket": "long"
+  },
+  {
+    "id": "de_de_0015",
+    "file": "de_de_0015.wav",
+    "text": "diese paare können sich für einen adoptionsplan für ihr baby entscheiden",
+    "durationSec": 6.9,
+    "speechStartSec": 1.124,
+    "speechEndSec": 6.392,
+    "bucket": "normal"
+  },
+  {
+    "id": "de_de_0016",
+    "file": "de_de_0016.wav",
+    "text": "am 15. august 1940 fielen die alliierten in südfrankreich ein die invasion wurde operation dragoon genannt",
+    "durationSec": 8.64,
+    "speechStartSec": 1.092,
+    "speechEndSec": 8.152,
+    "bucket": "normal"
+  },
+  {
+    "id": "de_de_0017",
+    "file": "de_de_0017.wav",
+    "text": "es ist also möglich dass der vermerk einfach als kennzeichnung hinzugefügt wurde",
+    "durationSec": 5.16,
+    "speechStartSec": 0.804,
+    "speechEndSec": 4.696,
+    "bucket": "normal"
+  },
+  {
+    "id": "de_de_0019",
+    "file": "de_de_0019.wav",
+    "text": "lakkha singh präsentierte den chhappan bhog bhajan ebenfalls der sänger raju khandelwal begleitete ihn",
+    "durationSec": 8.82,
+    "speechStartSec": 1.06,
+    "speechEndSec": 8.504,
+    "bucket": "normal"
+  },
+  {
+    "id": "de_de_0739",
+    "file": "de_de_0739.wav",
+    "text": "ringer-kollegen zollten luna ebenfalls tribut",
+    "durationSec": 3.6,
+    "speechStartSec": 0.644,
+    "speechEndSec": 3.064,
+    "bucket": "short"
+  }
+]

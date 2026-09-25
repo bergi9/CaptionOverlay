@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "models": [
+    {
+      "id": "tiny-q5_1",
+      "displayName": "Tiny (Q5_1)",
+      "languages": ["multi"],
+      "repo": "ggerganov/whisper.cpp",
+      "file": "ggml-tiny-q5_1.bin",
+      "sizeBytes": 32152673,
+      "sha256": "818710568da3ca15689e31a743197b520007872ff9576237bda97bd1b469c3d7",
+      "license": "mit",
+      "tier": "weak-cpu",
+      "notes": "Fastest, lowest quality. Good as a dedicated partials model."
+    },
+    {
+      "id": "base-q5_1",
+      "displayName": "Base (Q5_1)",
+      "languages": ["multi"],
+      "repo": "ggerganov/whisper.cpp",
+      "file": "ggml-base-q5_1.bin",
+      "sizeBytes": 59707625,
+      "sha256": "422f1ae452ade6f30a004d7e5c6a43195e4433bc370bf23fac9cc591f01a8898",
+      "license": "mit",
+      "tier": "cpu",
+      "notes": "CPU-only laptops."
+    },
+    {
+      "id": "small-q5_1",
+      "displayName": "Small (Q5_1)",
+      "languages": ["multi"],
+      "repo": "ggerganov/whisper.cpp",
+      "file": "ggml-small-q5_1.bin",
+      "sizeBytes": 190085487,
+      "sha256": "ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb",
+      "license": "mit",
+      "tier": "recommended-cpu",
+      "notes": "Decent multi-core CPU."
+    },
+    {
+      "id": "large-v3-turbo-q5_0",
+      "displayName": "Large v3 Turbo (Q5_0)",
+      "languages": ["multi"],
+      "repo": "ggerganov/whisper.cpp",
+      "file": "ggml-large-v3-turbo-q5_0.bin",
+      "sizeBytes": 574041195,
+      "sha256": "394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2",
+      "license": "mit",
+      "tier": "recommended-gpu",
+      "notes": "Best quality/speed balance on a GPU."
+    },
+    {
+      "id": "large-v3-turbo",
+      "displayName": "Large v3 Turbo (full precision)",
+      "languages": ["multi"],
+      "repo": "ggerganov/whisper.cpp",
+      "file": "ggml-large-v3-turbo.bin",
+      "sizeBytes": 1624555275,
+      "sha256": "1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69",
+      "license": "mit",
+      "tier": "gpu",
+      "notes": "GPU, maximum quality."
+    },
+    {
+      "id": "large-v3-turbo-german-q5_0",
+      "displayName": "Large v3 Turbo German (Q5_0)",
+      "languages": ["de"],
+      "forceLanguage": "de",
+      "repo": "MolyProduction/whisper-large-v3-turbo-german-ggml-q5_0",
+      "file": "ggml-large-v3-turbo-german-q5_0.bin",
+      "sizeBytes": 574041195,
+      "sha256": "15e92e3db0993c52fffa781513eec9253475331c1be808f8fb409285c9d9d030",
+      "license": "apache-2.0 (upstream: primeline/whisper-large-v3-turbo-german)",
+      "tier": "recommended-gpu",
+      "notes": "German fine-tune. Language is forced to German."
+    },
+    {
+      "id": "large-v3-turbo-german",
+      "displayName": "Large v3 Turbo German (full precision)",
+      "languages": ["de"],
+      "forceLanguage": "de",
+      "repo": "cstr/whisper-large-v3-turbo-german-ggml",
+      "file": "ggml-model.bin",
+      "sizeBytes": 1624555275,
+      "sha256": "6eb2e025198a6cbac7bdb1e86e278f5de002e583aae7bdfcf5183ef8da16decd",
+      "license": "apache-2.0 (upstream: primeline/whisper-large-v3-turbo-german)",
+      "tier": "gpu",
+      "notes": "German fine-tune, maximum quality. Language is forced to German."
+    }
+  ]
+}

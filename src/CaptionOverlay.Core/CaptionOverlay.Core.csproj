@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>CaptionOverlay.Core</RootNamespace>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio.Core" />
+    <PackageReference Include="NAudio.Wasapi" />
+    <PackageReference Include="Whisper.net" />
+    <PackageReference Include="Whisper.net.Runtime" />
+    <PackageReference Include="Whisper.net.Runtime.Vulkan" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Captions\hallucinations.json" LogicalName="CaptionOverlay.Core.Captions.hallucinations.json" />
+    <EmbeddedResource Include="..\..\catalog\models.json" LogicalName="CaptionOverlay.Core.Models.models.json" Link="Models\models.json" />
+    <None Include="Assets\silero_vad.onnx" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\tests\fixtures\speech_en.wav" Link="Assets\benchmark.wav" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="CaptionOverlay.Core.Tests" />
+  </ItemGroup>
+
+</Project>

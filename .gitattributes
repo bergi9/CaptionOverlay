@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.ico binary
+go.sum linguist-generated=true
+*.wav binary
+*.onnx binary
+*.png binary

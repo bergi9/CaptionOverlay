@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CaptionOverlay.Cli/CaptionOverlay.Cli.csproj" />
+    <Project Path="src/CaptionOverlay.Core/CaptionOverlay.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CaptionOverlay.Core.Tests/CaptionOverlay.Core.Tests.csproj" />
+  </Folder>
+</Solution>

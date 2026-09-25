@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Restore
+        run: dotnet restore CaptionOverlay.slnx
+      - name: Build
+        run: dotnet build CaptionOverlay.slnx -c Release --no-restore
+      - name: Test
+        # Tests needing a downloaded Whisper model skip themselves when it is absent.
+        run: dotnet test --solution CaptionOverlay.slnx -c Release --no-build

@@ -1,0 +1,17 @@
+﻿[
+    {
+        "startMs":  1000,
+        "endMs":  4103,
+        "text":  "The weather today is sunny with a light breeze from the west."
+    },
+    {
+        "startMs":  5603,
+        "endMs":  8164,
+        "text":  "Please remember to bring your umbrella tomorrow."
+    },
+    {
+        "startMs":  9364,
+        "endMs":  11780,
+        "text":  "Thank you, and have a wonderful evening."
+    }
+]

@@ -106,14 +106,19 @@ public class TranscriptionSchedulerTests
         scheduler.PartialCompleted += (_, _) => times.Add(DateTime.UtcNow);
         scheduler.Start(new TranscriberSet(fake));
         var id = Guid.NewGuid();
+        var offering = System.Diagnostics.Stopwatch.StartNew();
         for (int i = 1; i <= 20; i++)
         {
             scheduler.OfferPartial(Partial(id, i));
             await Task.Delay(40, TestContext.Current.CancellationToken);
         }
+        offering.Stop();
         await Task.Delay(350, TestContext.Current.CancellationToken);
         var sorted = times.OrderBy(t => t).ToList();
-        sorted.Count.Should().BeInRange(2, 4);
+        // The loop takes ~0.8 s locally but up to twice that on a slow CI runner (coarse timers): the bound follows the
+        // measured time, the spacing below is what matters.
+        int maxPartials = (int)(offering.Elapsed.TotalMilliseconds / 300) + 1;
+        sorted.Count.Should().BeInRange(2, maxPartials);
         for (int i = 1; i < sorted.Count; i++)
         {
             (sorted[i] - sorted[i - 1]).TotalMilliseconds.Should().BeGreaterThan(280);

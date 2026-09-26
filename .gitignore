@@ -487,4 +487,7 @@ $RECYCLE.BIN/
 models/
 !src/**/Models/
 !src/**/Models/**
+# (source folders named Models, not downloaded models: *.bin stays ignored)
+!tests/**/Models/
+!tests/**/Models/**
 artifacts/

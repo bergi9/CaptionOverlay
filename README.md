@@ -78,3 +78,7 @@ Other commands: `devices`, `record`, `segment`, `bench`, `models`, `download`, `
 | `docs/` | `decisions.md` (ADRs), `testing.md` (test status per milestone) |
 
 Design and roadmap: [`PLAN.md`](PLAN.md).
+
+## License
+
+[MIT](LICENSE). Third-party components and their licenses: [`packaging/THIRD_PARTY_NOTICES.txt`](packaging/THIRD_PARTY_NOTICES.txt). Whisper models are downloaded separately; each model's license is shown in the model manager.

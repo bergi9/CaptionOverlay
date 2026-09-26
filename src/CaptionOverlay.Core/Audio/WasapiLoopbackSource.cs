@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using CaptionOverlay.Core.Diagnostics;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
@@ -20,6 +21,10 @@ public sealed class WasapiLoopbackSource : IAudioSource
     private WasapiRecorder? _capture;
     private MMDevice? _device;
     private WaveFormat? _captureFormat;
+
+    [ThreadStatic]
+    private static bool t_threadRaised;
+
     private bool _running;
     private CancellationToken _ct;
 
@@ -194,6 +199,12 @@ public sealed class WasapiLoopbackSource : IAudioSource
         if (buffer.IsEmpty || format is null)
         {
             return;
+        }
+        if (!t_threadRaised)
+        {
+            // The process may run at background priority (local inference); capture must not lose audio.
+            t_threadRaised = true;
+            ProcessPriority.KeepThreadResponsive();
         }
 
         // Silent packets may carry garbage; the flag says to treat them as zeros.

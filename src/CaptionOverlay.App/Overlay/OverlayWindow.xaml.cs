@@ -18,6 +18,9 @@ namespace CaptionOverlay.App.Overlay;
 public partial class OverlayWindow : Window
 {
     private const double MinWidthFraction = 0.15;
+
+    /// <summary>The panel's fade-out (0.6 s in OverlayWindow.xaml) plus a margin: after it the panel is invisible.</summary>
+    private static readonly TimeSpan PanelFadeOut = TimeSpan.FromMilliseconds(700);
     private readonly OverlayViewModel _vm;
     private readonly OverlaySettings _settings;
     private readonly DispatcherTimer _topmostTimer;
@@ -161,9 +164,11 @@ public partial class OverlayWindow : Window
     }
 
     /// <summary>
-    /// Resizes the window to fit its content while keeping the bottom edge in place. Sized for the end of the running
-    /// line animations: it grows at once (a growing line is never clipped), but shrinks only after the animations
-    /// finished, so the window is not resized on every animation frame.
+    /// Resizes the window to fit its content while keeping the bottom edge in place, sized for the end of the running
+    /// line animations. Resizing a layered window shows its previous picture at the new position for a frame or two
+    /// (measured: the text jumped by the height change and back), so while captions are visible the window only grows,
+    /// with one text row of room to spare, and it shrinks only once the panel has faded out. The extra height above the
+    /// panel is transparent (and click-through).
     /// </summary>
     private void UpdateHeight()
     {
@@ -191,21 +196,37 @@ public partial class OverlayWindow : Window
         int height = Math.Max(1, (int)Math.Ceiling(Root.DesiredSize.Height * dpi.DpiScaleY));
         Root.Measure(available);
 
-        var sinceChange = Stopwatch.GetElapsedTime(_lastContentChange);
-        var settle = RevealDecorator.Duration + TimeSpan.FromMilliseconds(100);
-        if (height < rect.Height && rect.Bottom == _bottomPx && sinceChange < settle)
+        int target;
+        if (_vm.IsEditMode || rect.Bottom != _bottomPx)
         {
-            _shrinkTimer ??= new DispatcherTimer(DispatcherPriority.Render, Dispatcher);
-            _shrinkTimer.Stop();
-            _shrinkTimer.Interval = settle - sinceChange;
-            _shrinkTimer.Tick -= OnShrinkTimer;
-            _shrinkTimer.Tick += OnShrinkTimer;
-            _shrinkTimer.Start();
+            target = height; // the user is arranging the overlay (or it moved): fit exactly
+        }
+        else if (height > rect.Height)
+        {
+            target = height + (int)Math.Ceiling(_vm.FontSize * _vm.FontFamily.LineSpacing * dpi.DpiScaleY);
+        }
+        else if (height < rect.Height && !_vm.ShowPanel)
+        {
+            var sinceHidden = Stopwatch.GetElapsedTime(_lastContentChange);
+            if (sinceHidden < PanelFadeOut)
+            {
+                _shrinkTimer ??= new DispatcherTimer(DispatcherPriority.Render, Dispatcher);
+                _shrinkTimer.Stop();
+                _shrinkTimer.Interval = PanelFadeOut - sinceHidden;
+                _shrinkTimer.Tick -= OnShrinkTimer;
+                _shrinkTimer.Tick += OnShrinkTimer;
+                _shrinkTimer.Start();
+                return;
+            }
+            target = height;
+        }
+        else
+        {
             return;
         }
-        if (height != rect.Height || rect.Bottom != _bottomPx)
+        if (target != rect.Height || rect.Bottom != _bottomPx)
         {
-            SetWindowPos(_hwnd, HWND_TOPMOST, rect.Left, _bottomPx - height, rect.Width, height, SWP_NOACTIVATE);
+            SetWindowPos(_hwnd, HWND_TOPMOST, rect.Left, _bottomPx - target, rect.Width, target, SWP_NOACTIVATE);
         }
     }
 

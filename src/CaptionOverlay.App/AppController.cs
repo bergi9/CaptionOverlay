@@ -10,6 +10,7 @@ using CaptionOverlay.App.Tray;
 using CaptionOverlay.Core;
 using CaptionOverlay.Core.Audio;
 using CaptionOverlay.Core.Captions;
+using CaptionOverlay.Core.Diagnostics;
 using CaptionOverlay.Core.Export;
 using CaptionOverlay.Core.Models;
 using CaptionOverlay.Core.Pipeline;
@@ -388,6 +389,16 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         };
     }
 
+    /// <summary>
+    /// Local models share the CPU and GPU with the video being captioned, so the process runs in the background while
+    /// one is loaded; the UI thread (caller) keeps a normal app's priority so the overlay stays smooth.
+    /// </summary>
+    private void ApplyInferencePriority(bool local)
+    {
+        ProcessPriority.SetBackground(local, _logger);
+        Thread.CurrentThread.Priority = local ? ThreadPriority.Highest : ThreadPriority.Normal;
+    }
+
     private string? EffectiveLanguage() => Settings.Engine.Language is "" or "auto" ? null : Settings.Engine.Language;
 
     /// <summary>Streaming models always run partial passes: they carry the audio upload, and the live text costs nothing extra.</summary>
@@ -398,6 +409,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
     public TranscriberFactory BuildTranscriberFactory()
     {
         var engine = Settings.Engine;
+        ApplyInferencePriority(engine.Mode == EngineMode.Local);
         if (engine.Mode == EngineMode.Api)
         {
             var api = Settings.Api;

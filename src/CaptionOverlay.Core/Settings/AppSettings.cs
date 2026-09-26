@@ -180,7 +180,7 @@ public sealed class OverlaySettings
 
     public string BackgroundColor { get; set; } = "#000000";
 
-    public double BackgroundOpacity { get; set; } = 0.55;
+    public double BackgroundOpacity { get; set; } = 0.7;
 
     public int LinesShown { get; set; } = 2;
 

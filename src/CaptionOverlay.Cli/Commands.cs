@@ -24,7 +24,7 @@ public static class Commands
           segment <in.wav> [--no-vad]           Print utterance boundaries found by VAD + segmenter
           live [--model <id|path>] [--lang de] [--wav <file> [--realtime]] [--partial-model <id|path>]
                [--api groq|openai|custom --api-key <key> --api-model <m> --api-url <url>]
-               [--no-vad] [--no-partials] [--cpu] [--srt <file>]
+               [--no-vad] [--no-partials] [--cpu] [--srt <file>] [--normal-priority]
                                                 Live captions from loopback (or a WAV file) to the console
           bench --model <id|path> [--cpu]       Benchmark a model on the bundled fixture (real-time factor)
           models                                List catalog models and what is installed
@@ -220,6 +220,8 @@ public static class Commands
                 return new TranscriberSet(await CreateApiTranscriberAsync(args, partials, language, loggers.CreateLogger("ApiTranscriber"), token));
             }
 
+            // Like the app: local inference yields to other programs unless asked otherwise (for comparisons).
+            ProcessPriority.SetBackground(!args.Has("normal-priority"), loggers.CreateLogger("Priority"));
             var main = ResolveModel(args.Get("model") ?? "tiny-q5_1", catalog, store);
             var final = await LocalWhisperTranscriber.LoadAsync(
                 new LocalWhisperOptions { ModelPath = main.Path, DisplayName = main.DisplayName, ForcedLanguage = main.ForceLanguage, EnablePartials = partials },

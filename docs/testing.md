@@ -41,6 +41,8 @@ Test machine for the ✅ items: Windows 11 Pro 26200, RTX 4090, 16 cores, 3840×
 
 ## M4 — Overlay
 - ✅ Overlay shows on top, click-through in locked mode (WS_EX_TRANSPARENT), toolwindow/no-activate; edit mode (Ctrl+Alt+C) shows toolbar/frame/placeholder; content-driven height fixed (see ADR-007).
+- ✅ Flicker (ADR-022): 6 min of real speech with every desktop frame over the overlay captured: 24 flickers before (window shrink), 0 after.
+- ✅ Stutter of other programs (ADR-023): frame meter at 240 Hz under GPU load while the local model runs; flash attention halves the stalls, animations capped at 60 fps, background priority. ⏳ Firefox video playback itself (not measurable from here).
 - ✅ Hotkeys registered; tray icon; single-instance activation opens Settings.
 - ⏳ Borderless game on top; 150 % DPI second monitor; drag between monitors; position after restart (persistence code path runs, not checked across monitors).
 

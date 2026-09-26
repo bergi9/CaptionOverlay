@@ -15,6 +15,8 @@ public sealed class RevealDecorator : Decorator
 {
     public static readonly TimeSpan Duration = TimeSpan.FromMilliseconds(350);
 
+    public const int FrameRate = 60;
+
     public static readonly DependencyProperty IsShownProperty = DependencyProperty.Register(
         nameof(IsShown), typeof(bool), typeof(RevealDecorator),
         new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsMeasure, (d, _) => ((RevealDecorator)d).OnIsShownChanged()));
@@ -81,7 +83,7 @@ public sealed class RevealDecorator : Decorator
             {
                 // Start after this layout pass (changing an animated property inside Measure would re-enter layout).
                 Dispatcher.BeginInvoke(DispatcherPriority.Render, () => BeginAnimation(DisplayHeightProperty,
-                    new DoubleAnimation(target, Duration) { EasingFunction = Ease }));
+                    Animation(target)));
             }
             else
             {
@@ -123,7 +125,18 @@ public sealed class RevealDecorator : Decorator
             return;
         }
         // From the current (possibly mid-animation) value, so reversing halfway does not jump.
-        BeginAnimation(OpacityProperty, new DoubleAnimation(to, Duration) { EasingFunction = Ease });
+        BeginAnimation(OpacityProperty, Animation(to));
+    }
+
+    /// <summary>
+    /// Capped at 60 fps: an overlay animation otherwise renders at the monitor rate (240 Hz here). With the cap, another
+    /// program rendering at 240 Hz had about a third fewer frame hitches while the overlay animated (ADR-023).
+    /// </summary>
+    private static DoubleAnimation Animation(double to)
+    {
+        var animation = new DoubleAnimation(to, Duration) { EasingFunction = Ease };
+        Timeline.SetDesiredFrameRate(animation, FrameRate);
+        return animation;
     }
 
     /// <summary>Invalidates the measure of every decorator below <paramref name="root"/> (after toggling <see cref="MeasureFinalLayout"/>).</summary>

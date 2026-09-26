@@ -107,7 +107,10 @@ public sealed class LocalWhisperTranscriber : ITranscriber
             {
                 try
                 {
-                    factory = WhisperFactory.FromPath(options.ModelPath, new WhisperFactoryOptions { UseGpu = useGpu });
+                    // Flash attention: the encoder pass of large-v3-turbo on Vulkan drops from ~107 ms to ~44 ms of GPU time
+                    // (the plain attention matmuls took ~80 ms). Each pass blocks other programs' GPU work (video, games)
+                    // while it runs, so this halves the stalls they see (ADR-023). Same accuracy on the German clips.
+                    factory = WhisperFactory.FromPath(options.ModelPath, new WhisperFactoryOptions { UseGpu = useGpu, UseFlashAttention = useGpu });
                     // Loading can be lazy: building a processor forces the model to actually load.
                     using var probe = factory.CreateBuilder().Build();
                 }

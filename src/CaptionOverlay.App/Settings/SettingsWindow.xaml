@@ -57,6 +57,15 @@
                             <Button DockPanel.Dock="Right" Content="{l:Loc Common_Open}" Command="{Binding OpenTranscriptsFolderCommand}" Margin="6,0,0,0" />
                             <TextBox Text="{Binding TranscriptsFolder, UpdateSourceTrigger=LostFocus}" />
                         </DockPanel>
+                        <StackPanel IsEnabled="{Binding TranscriptsAutoSave}">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Loc General_Split}" />
+                            <ComboBox ItemsSource="{Binding TranscriptSplitChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding TranscriptsSplit}" />
+                            <StackPanel Visibility="{Binding IsSplitAfterBreak, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Loc General_SplitAfterMinutes, Value={Binding TranscriptsSplitAfterMinutes}}" />
+                                <Slider Minimum="5" Maximum="240" Value="{Binding TranscriptsSplitAfterMinutes}" IsSnapToTickEnabled="True" TickFrequency="5" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource Hint}" Text="{l:Loc General_SplitHint}" />
+                        </StackPanel>
 
                         <TextBlock Style="{StaticResource SectionHeader}" Text="{l:Loc Common_Diagnostics}" />
                         <CheckBox Content="{l:Loc General_LogText}" IsChecked="{Binding GeneralLogTranscriptText}" />

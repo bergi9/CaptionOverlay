@@ -87,7 +87,7 @@ Details stehen im Protokollordner.</value></data>
   <data name="General_StartListening" xml:space="preserve"><value>Beim Start der App sofort zuhören</value></data>
   <data name="General_CheckForUpdates" xml:space="preserve"><value>Hinweis, wenn auf GitHub eine neue Version erscheint (keine automatischen Downloads)</value></data>
   <data name="General_Transcripts" xml:space="preserve"><value>Transkripte</value></data>
-  <data name="General_AutoSave" xml:space="preserve"><value>Von jeder Sitzung automatisch ein Transkript speichern</value></data>
+  <data name="General_AutoSave" xml:space="preserve"><value>Transkripte automatisch speichern</value></data>
   <data name="General_Srt" xml:space="preserve"><value>SubRip (.srt)</value></data>
   <data name="General_Txt" xml:space="preserve"><value>Nur Text (.txt)</value></data>
   <data name="General_Folder" xml:space="preserve"><value>Ordner (leer = Dokumente\CaptionOverlay)</value></data>
@@ -299,4 +299,14 @@ Details stehen im Protokollordner.</value></data>
   <data name="ModelNote_large-v3-turbo" xml:space="preserve"><value>Grafikkarte, höchste Qualität.</value></data>
   <data name="ModelNote_large-v3-turbo-german-q5_0" xml:space="preserve"><value>Auf Deutsch trainiert. Die Sprache ist fest auf Deutsch eingestellt.</value></data>
   <data name="ModelNote_large-v3-turbo-german" xml:space="preserve"><value>Auf Deutsch trainiert, höchste Qualität. Die Sprache ist fest auf Deutsch eingestellt.</value></data>
+  <data name="Tray_SplitTranscript" xml:space="preserve"><value>Transkript jetzt aufteilen</value></data>
+  <data name="Notify_SplitTitle" xml:space="preserve"><value>Neue Transkript-Datei</value></data>
+  <data name="Notify_SplitDone" xml:space="preserve"><value>Weiter in {0}</value></data>
+  <data name="Notify_SplitAutoSaveOff" xml:space="preserve"><value>Transkripte werden nicht automatisch gespeichert (Einstellungen → Allgemein).</value></data>
+  <data name="General_Split" xml:space="preserve"><value>Neue Transkript-Datei beginnen</value></data>
+  <data name="General_SplitAfterBreak" xml:space="preserve"><value>Nach einer Pause ohne Untertitel</value></data>
+  <data name="General_SplitEachStart" xml:space="preserve"><value>Bei jedem Start des Zuhörens</value></data>
+  <data name="General_SplitManual" xml:space="preserve"><value>Nur wenn ich aufteile</value></data>
+  <data name="General_SplitAfterMinutes" xml:space="preserve"><value>Pause von mindestens {0:F0} min</value></data>
+  <data name="General_SplitHint" xml:space="preserve"><value>„Transkript jetzt aufteilen“ im Taskleistenmenü beginnt jederzeit eine neue Datei. Ein Neustart der App beginnt ebenfalls eine neue Datei.</value></data>
 </root>

@@ -50,7 +50,8 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
     private HotkeyService? _hotkeys;
     private SettingsWindow? _settingsWindow;
     private FirstRunWindow? _firstRunWindow;
-    private TranscriptSession? _transcript;
+    private readonly TranscriptRecorder _transcripts = new();
+    private readonly Lock _transcriptGate = new();
     private bool _quitting;
     private bool _startError;
     private (string? Language, bool Partials, EngineMode Mode, bool Streaming) _runningEngineParams;
@@ -158,7 +159,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
             var config = BuildPipelineConfig();
             _startError = false;
             await Pipeline.StartAsync(config, BuildTranscriberFactory());
-            StartTranscriptSession();
+            TranscriptsListeningStarted();
             IsListening = true;
             IsPaused = false;
         }
@@ -183,8 +184,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         try
         {
             await Pipeline.StopAsync();
-            _transcript?.Dispose();
-            _transcript = null;
+            WithTranscripts(t => t.ListeningStopped());
             IsListening = false;
             IsPaused = false;
         }
@@ -250,6 +250,9 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
                 break;
             case SettingsSection.Hotkeys:
                 RegisterHotkeys();
+                break;
+            case SettingsSection.Transcripts:
+                WithTranscripts(t => t.Update(TranscriptOptions()));
                 break;
             case SettingsSection.Engine:
             case SettingsSection.Api:
@@ -476,37 +479,49 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
 
     private void OnLineCommitted(CaptionLine line)
     {
-        try
-        {
-            _transcript?.Append(line);
-        }
-        catch (IOException ex)
-        {
-            _logger.LogWarning(ex, "Writing transcript failed");
-        }
+        WithTranscripts(t => t.Append(line));
         if (Settings.General.LogTranscriptText)
         {
             _logger.LogDebug("Caption {Start}-{End}: {Text}", line.Start, line.End, line.Text);
         }
     }
 
-    private void StartTranscriptSession()
+    private void TranscriptsListeningStarted() =>
+        WithTranscripts(t => t.ListeningStarted(TranscriptOptions(), Pipeline.SessionStartedAt));
+
+    private TranscriptOptions? TranscriptOptions()
     {
-        _transcript?.Dispose();
-        _transcript = null;
         var t = Settings.Transcripts;
-        if (!t.AutoSave || (!t.Srt && !t.Txt))
+        return t.AutoSave ? new TranscriptOptions(TranscriptsFolder, t.Srt, t.Txt, t.Split, TimeSpan.FromMinutes(t.SplitAfterMinutes)) : null;
+    }
+
+    /// <summary>Recorder calls come from the UI thread and the pipeline (committed lines): one at a time, file errors logged.</summary>
+    private void WithTranscripts(Action<TranscriptRecorder> action)
+    {
+        lock (_transcriptGate)
         {
+            try
+            {
+                action(_transcripts);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _logger.LogWarning(ex, "Writing transcript failed");
+            }
+        }
+    }
+
+    /// <summary>Tray "Split transcript now": closes the current files and starts new ones.</summary>
+    public void SplitTranscriptNow()
+    {
+        string? path = null;
+        WithTranscripts(t => path = t.SplitNow() ? t.CurrentBasePath : null);
+        if (path is null)
+        {
+            _tray?.Notify("CaptionOverlay", Loc.Get("Notify_SplitAutoSaveOff"), () => ShowSettings("General"));
             return;
         }
-        try
-        {
-            _transcript = new TranscriptSession(TranscriptsFolder, t.Srt, t.Txt);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            _logger.LogWarning(ex, "Cannot create transcript files");
-        }
+        _tray?.Notify(Loc.Get("Notify_SplitTitle"), Loc.Format("Notify_SplitDone", Path.GetFileName(path)), OpenTranscriptsFolder);
     }
 
     public string TranscriptsFolder => string.IsNullOrWhiteSpace(Settings.Transcripts.Folder) ? TranscriptSession.DefaultFolder : Settings.Transcripts.Folder;
@@ -517,8 +532,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         IsPaused = Pipeline.IsPaused;
         if (status.State == PipelineState.Error && !Pipeline.IsRunning)
         {
-            _transcript?.Dispose();
-            _transcript = null;
+            WithTranscripts(t => t.ListeningStopped());
             _tray?.Notify(Loc.Get("Notify_Stopped"), status.Message ?? Loc.Get("Common_Error"));
         }
         UpdateStatusText();
@@ -734,7 +748,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         _metricsTimer.Stop();
         Downloader.Dispose();
         await Pipeline.DisposeAsync();
-        _transcript?.Dispose();
+        WithTranscripts(t => t.Dispose());
         _hotkeys?.Dispose();
         _tray?.Dispose();
         _overlay?.Close();

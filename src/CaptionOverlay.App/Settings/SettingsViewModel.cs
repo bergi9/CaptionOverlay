@@ -101,6 +101,13 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Choice.Localized(nameof(AppTheme.Dark), "General_ThemeDark"),
     ];
 
+    public IReadOnlyList<Choice> TranscriptSplitChoices { get; } =
+    [
+        Choice.Localized(nameof(TranscriptSplit.AfterBreak), "General_SplitAfterBreak"),
+        Choice.Localized(nameof(TranscriptSplit.EachStart), "General_SplitEachStart"),
+        Choice.Localized(nameof(TranscriptSplit.Manual), "General_SplitManual"),
+    ];
+
     public IReadOnlyList<string> FontFamilies { get; }
 
     public IReadOnlyList<Choice> ApiProviders { get; }
@@ -183,6 +190,14 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] public partial string TranscriptsFolder { get; set; } = "";
     [ObservableProperty] public partial bool TranscriptsSrt { get; set; }
     [ObservableProperty] public partial bool TranscriptsTxt { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSplitAfterBreak))]
+    public partial string? TranscriptsSplit { get; set; }
+
+    [ObservableProperty] public partial double TranscriptsSplitAfterMinutes { get; set; }
+
+    public bool IsSplitAfterBreak => TranscriptsSplit == nameof(TranscriptSplit.AfterBreak);
 
     // ───── Audio ─────
     [ObservableProperty] public partial string? AudioDeviceId { get; set; }
@@ -268,6 +283,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         TranscriptsFolder = t.Folder ?? "";
         TranscriptsSrt = t.Srt;
         TranscriptsTxt = t.Txt;
+        TranscriptsSplit = t.Split.ToString();
+        TranscriptsSplitAfterMinutes = t.SplitAfterMinutes;
 
         var a = _s.Audio;
         AudioDeviceId = a.DeviceId ?? "";
@@ -366,6 +383,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         t.Folder = string.IsNullOrWhiteSpace(TranscriptsFolder) ? null : TranscriptsFolder.Trim();
         t.Srt = TranscriptsSrt;
         t.Txt = TranscriptsTxt;
+        t.Split = Enum.TryParse<TranscriptSplit>(TranscriptsSplit, out var split) ? split : TranscriptSplit.AfterBreak;
+        t.SplitAfterMinutes = (int)Math.Round(TranscriptsSplitAfterMinutes);
 
         var a = _s.Audio;
         a.DeviceId = string.IsNullOrEmpty(AudioDeviceId) ? null : AudioDeviceId;
@@ -667,7 +686,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// </summary>
     private void OnCultureChanged() => System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
     {
-        foreach (var choice in Languages.Concat(UiLanguageChoices).Concat(ThemeChoices).Concat(ApiProviders).Concat(EngineModes)
+        foreach (var choice in Languages.Concat(UiLanguageChoices).Concat(ThemeChoices).Concat(TranscriptSplitChoices).Concat(ApiProviders).Concat(EngineModes)
                      .Concat(GpuChoices).Concat(Devices).Concat(PartialModelChoices).Concat(ApiModelChoices))
         {
             choice.Refresh();

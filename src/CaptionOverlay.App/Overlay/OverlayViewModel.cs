@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -9,10 +10,13 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace CaptionOverlay.App.Overlay;
 
-/// <summary>One overlay line: the in-progress (tentative) text of an utterance, later the same line committed.</summary>
-public sealed partial class CaptionLineViewModel(Guid id) : ObservableObject
+/// <summary>
+/// One overlay row: a piece of an utterance (see <see cref="CaptionLineSplitter"/>), in progress (tentative) and later the
+/// same row committed. Key = utterance id + row index, so a row keeps its place when the utterance is committed.
+/// </summary>
+public sealed partial class CaptionLineViewModel(string key) : ObservableObject
 {
-    public Guid Id { get; } = id;
+    public string Key { get; } = key;
 
     [ObservableProperty]
     public partial string Text { get; set; } = "";
@@ -36,6 +40,9 @@ public sealed partial class OverlayViewModel : ObservableObject
     private readonly DispatcherTimer _fadeTimer;
     private DateTime _lastActivity = DateTime.UtcNow;
     private OverlaySettings _settings;
+    private CaptionSnapshot? _lastSnapshot;
+    private double _rowWidth;
+    private Func<string, double>? _measure;
 
     public OverlayViewModel(OverlaySettings settings)
     {
@@ -110,38 +117,75 @@ public sealed partial class OverlayViewModel : ObservableObject
         LinesShown = Math.Max(1, s.LinesShown);
         RevealDecorator.Enabled = s.AnimateLines;
         UpdateBackground();
+        Refresh(); // the font may have changed: split again
     }
 
     /// <summary>
-    /// Renders the newest committed lines plus the tentative line. UI thread only. Lines are diffed, never rebuilt:
-    /// the tentative line of an utterance becomes its committed line in place (italic → normal, no jump), new lines
-    /// grow in at the bottom and old ones animate out at the top (see <see cref="RevealDecorator"/>).
+    /// Width available for one row of text and a function measuring text in the caption font (both in DIPs), set by
+    /// the window. Until they are known, each utterance is one row.
+    /// </summary>
+    public void SetTextLayout(double rowWidth, Func<string, double> measure)
+    {
+        if (Math.Abs(rowWidth - _rowWidth) < 0.5 && _measure is not null)
+        {
+            return;
+        }
+        _rowWidth = rowWidth;
+        _measure = measure;
+        Refresh();
+    }
+
+    /// <summary>Splits the last captions again (width or font changed).</summary>
+    public void Refresh()
+    {
+        if (_lastSnapshot is { } snapshot)
+        {
+            Render(snapshot);
+        }
+    }
+
+    /// <summary>
+    /// Renders the newest rows: committed captions and the tentative one, each split into rows that fit the width
+    /// (<see cref="CaptionLineSplitter"/>); <see cref="LinesShown"/> counts rows. UI thread only. Rows are diffed,
+    /// never rebuilt: the tentative rows of an utterance become its committed rows in place (italic → normal, no jump),
+    /// new rows grow in at the bottom and old ones animate out at the top (see <see cref="RevealDecorator"/>).
     /// </summary>
     public void Update(CaptionSnapshot snapshot)
     {
-        // The tentative line takes one of the visible slots.
-        var wanted = snapshot.Lines.TakeLast(Math.Max(0, LinesShown - (snapshot.Tentative is null ? 0 : 1)))
-            .Select(l => (Id: l.UtteranceId, l.Text, Tentative: false))
-            .ToList();
+        _lastSnapshot = snapshot;
+        Render(snapshot);
+        _lastActivity = DateTime.UtcNow;
+        IsFaded = false;
+        OnPropertyChanged(nameof(ShowPanel));
+    }
+
+    private void Render(CaptionSnapshot snapshot)
+    {
+        var rows = new List<(string Key, string Text, bool Tentative)>();
+        foreach (var line in snapshot.Lines)
+        {
+            AddRows(rows, line.UtteranceId, line.Text, tentative: false);
+        }
         if (snapshot.Tentative is { } tentative)
         {
-            wanted.Add((tentative.UtteranceId, tentative.Text, true));
+            AddRows(rows, tentative.UtteranceId, tentative.Text, tentative: true);
         }
+        var wanted = rows.TakeLast(LinesShown).ToList();
 
-        foreach (var line in Lines.Where(l => !l.IsLeaving && !wanted.Any(w => w.Id == l.Id)).ToList())
+        foreach (var line in Lines.Where(l => !l.IsLeaving && !wanted.Any(w => w.Key == l.Key)).ToList())
         {
             Leave(line);
         }
 
-        // Insert or update in the wanted order; leaving lines keep their place until their animation is over.
+        // Insert or update in the wanted order; leaving rows keep their place until their animation is over.
         for (int i = 0; i < wanted.Count; i++)
         {
-            var (id, text, isTentative) = wanted[i];
-            var line = Lines.FirstOrDefault(l => l.Id == id);
+            var (key, text, isTentative) = wanted[i];
+            var line = Lines.FirstOrDefault(l => l.Key == key);
             if (line is null)
             {
-                line = new CaptionLineViewModel(id);
-                var nextWanted = wanted.Skip(i + 1).Select(w => Lines.FirstOrDefault(l => l.Id == w.Id)).FirstOrDefault(l => l is not null);
+                line = new CaptionLineViewModel(key);
+                var nextWanted = wanted.Skip(i + 1).Select(w => Lines.FirstOrDefault(l => l.Key == w.Key)).FirstOrDefault(l => l is not null);
                 Lines.Insert(nextWanted is null ? Lines.Count : Lines.IndexOf(nextWanted), line);
             }
             else if (line.IsLeaving)
@@ -154,11 +198,21 @@ public sealed partial class OverlayViewModel : ObservableObject
             line.IsTentative = isTentative;
         }
 
-        _lastActivity = DateTime.UtcNow;
-        IsFaded = false;
         OnPropertyChanged(nameof(HasContent));
         OnPropertyChanged(nameof(ShowPanel));
         OnPropertyChanged(nameof(ShowPlaceholder));
+    }
+
+    private void AddRows(List<(string Key, string Text, bool Tentative)> rows, Guid utteranceId, string text, bool tentative)
+    {
+        // OutlinedTextBlock wraps at its width minus the outline on both sides; 3 % spare for italic (tentative) text, so a
+        // row never wraps when it turns from italic to normal or back.
+        double width = (_rowWidth - 2 * OutlineThickness) * 0.97;
+        var pieces = _measure is { } measure ? CaptionLineSplitter.Split(text, width, measure) : [text];
+        for (int i = 0; i < pieces.Count; i++)
+        {
+            rows.Add((string.Create(CultureInfo.InvariantCulture, $"{utteranceId:N}/{i}"), pieces[i], tentative));
+        }
     }
 
     private void Leave(CaptionLineViewModel line)
@@ -177,6 +231,8 @@ public sealed partial class OverlayViewModel : ObservableObject
     }
 
     partial void OnBackgroundOpacityChanged(double value) => UpdateBackground();
+
+    partial void OnLinesShownChanged(int value) => Refresh();
 
     [RelayCommand]
     private void IncreaseFont() => EditStyle(() => _settings.FontSize = FontSize = Math.Min(96, FontSize + 2));

@@ -65,6 +65,14 @@ public sealed class AppSettings
         {
             General.Theme = defaults.General.Theme;
         }
+        if (!Enum.IsDefined(Transcripts.Split))
+        {
+            Transcripts.Split = defaults.Transcripts.Split;
+        }
+        if (Transcripts.SplitAfterMinutes is < 1 or > 1440)
+        {
+            Transcripts.SplitAfterMinutes = defaults.Transcripts.SplitAfterMinutes;
+        }
 
         if (string.IsNullOrWhiteSpace(Engine.Language))
         {
@@ -230,6 +238,12 @@ public sealed class TranscriptSettings
     public bool Srt { get; set; } = true;
 
     public bool Txt { get; set; } = true;
+
+    /// <summary>When a new transcript file starts (besides "Split now").</summary>
+    public TranscriptSplit Split { get; set; } = TranscriptSplit.AfterBreak;
+
+    /// <summary>For <see cref="TranscriptSplit.AfterBreak"/>: minutes without captions that start a new file.</summary>
+    public int SplitAfterMinutes { get; set; } = 30;
 }
 
 public sealed class GeneralSettings
@@ -256,4 +270,17 @@ public enum AppTheme
     System,
     Light,
     Dark,
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<TranscriptSplit>))]
+public enum TranscriptSplit
+{
+    /// <summary>A new file after a break without captions (<see cref="TranscriptSettings.SplitAfterMinutes"/>); stopping and starting within it continues the file.</summary>
+    AfterBreak,
+
+    /// <summary>A new file each time listening starts.</summary>
+    EachStart,
+
+    /// <summary>Only "Split now" (and restarting the app) start a new file.</summary>
+    Manual,
 }

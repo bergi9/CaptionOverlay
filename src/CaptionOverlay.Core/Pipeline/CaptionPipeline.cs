@@ -56,6 +56,9 @@ public sealed class CaptionPipeline : IAsyncDisposable
 
     public TimeSpan SessionTime => _session.Elapsed;
 
+    /// <summary>Wall-clock time of <see cref="CaptionLine.Start"/> zero (the caption timeline starts when listening starts).</summary>
+    public DateTimeOffset SessionStartedAt { get; private set; } = DateTimeOffset.Now;
+
     public string? RuntimeDescription => _transcribers?.Final.RuntimeDescription;
 
     public string? TranscriberName => _transcribers?.Final.DisplayName;
@@ -121,6 +124,7 @@ public sealed class CaptionPipeline : IAsyncDisposable
             Captions.Reset();
             _paused = false;
             _session.Restart();
+            SessionStartedAt = DateTimeOffset.Now;
             var token = _cts.Token;
             _processing = Task.Run(() => ProcessAsync(_channel.Reader, _source.IsLive, token), CancellationToken.None);
             await _source.StartAsync(token).ConfigureAwait(false);

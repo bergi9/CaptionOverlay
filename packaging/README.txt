@@ -31,7 +31,10 @@ Everyday use
 - Ctrl+Alt+C  move / resize the overlay (edit mode)
 - Ctrl+Alt+P  pause / resume captions
 - Ctrl+Alt+X  clear the overlay
-- Transcripts (.srt and .txt) are saved to Documents\CaptionOverlay (can be turned off).
+- Transcripts (.srt and .txt) are saved to Documents\CaptionOverlay (can be turned off). A new file starts
+  after a break of 30 min without captions (Settings -> General can change that); "Split transcript now" in the
+  tray menu starts one at any time.
+- Long sentences are shown as short rows that scroll ("Lines shown" counts rows).
 - Language (English / German, follows Windows) and light/dark mode: Settings -> General.
 
 Known limitation: the overlay cannot appear above games running in *exclusive* fullscreen.

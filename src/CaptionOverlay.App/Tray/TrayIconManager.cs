@@ -66,6 +66,9 @@ public sealed class TrayIconManager : IDisposable
         menu.Items.Add(BuildEngineMenu());
         menu.Items.Add(new Separator());
         menu.Items.Add(Item(Loc.Get("Tray_CopyTranscript"), _app.CopyTranscript));
+        var split = Item(Loc.Get("Tray_SplitTranscript"), _app.SplitTranscriptNow);
+        split.IsEnabled = _app.Settings.Transcripts.AutoSave;
+        menu.Items.Add(split);
         menu.Items.Add(Item(Loc.Get("Tray_OpenTranscripts"), _app.OpenTranscriptsFolder));
         menu.Items.Add(new Separator());
         menu.Items.Add(Item(Loc.Get("Tray_Settings"), () => _app.ShowSettings()));

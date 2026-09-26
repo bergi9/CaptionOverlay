@@ -83,6 +83,11 @@ public sealed class TranscriptSession : IDisposable
         Directory.CreateDirectory(folder);
         string baseName = (startedAt ?? DateTime.Now).ToString("yyyy-MM-dd_HH-mm-ss", CultureInfo.InvariantCulture);
         BasePath = Path.Combine(folder, baseName);
+        // Two files in the same second ("Split now" twice): never overwrite, number the newer one.
+        for (int n = 2; File.Exists(BasePath + ".srt") || File.Exists(BasePath + ".txt"); n++)
+        {
+            BasePath = Path.Combine(folder, string.Create(CultureInfo.InvariantCulture, $"{baseName}_{n}"));
+        }
         if (srt)
         {
             _writers.Add(new SrtWriter(BasePath + ".srt"));

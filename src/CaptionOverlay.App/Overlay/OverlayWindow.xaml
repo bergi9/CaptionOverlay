@@ -83,7 +83,7 @@
                 <StackPanel>
                     <!-- Committed lines and the in-progress (tentative) line, which becomes committed in place.
                          RevealDecorator animates lines in and out so the text scrolls instead of jumping. -->
-                    <ItemsControl ItemsSource="{Binding Lines}">
+                    <ItemsControl x:Name="LinesHost" ItemsSource="{Binding Lines}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type local:CaptionLineViewModel}">
                                 <local:RevealDecorator IsShown="{Binding IsShown}">

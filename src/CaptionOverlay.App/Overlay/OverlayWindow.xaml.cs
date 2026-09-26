@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -45,6 +46,13 @@ public partial class OverlayWindow : Window
         vm.Lines.CollectionChanged += (_, _) => OnContentChanged();
         MouseLeftButtonDown += OnMouseLeftButtonDown;
         DpiChanged += (_, _) => QueueHeightUpdate();
+        LinesHost.SizeChanged += (_, e) =>
+        {
+            if (e.WidthChanged)
+            {
+                _vm.SetTextLayout(LinesHost.ActualWidth, MeasureCaption);
+            }
+        };
     }
 
     /// <summary>Raised after the user moved or resized the overlay (placement already written to settings).</summary>
@@ -146,6 +154,12 @@ public partial class OverlayWindow : Window
             SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
         }
     }
+
+    /// <summary>Width of <paramref name="text"/> on one line in the caption font (DIPs), for splitting captions into rows.</summary>
+    private double MeasureCaption(string text) =>
+        new FormattedText(text, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
+            new Typeface(_vm.FontFamily, FontStyles.Normal, _vm.FontWeight, FontStretches.Normal), Math.Max(1, _vm.FontSize),
+            Brushes.White, VisualTreeHelper.GetDpi(this).PixelsPerDip).WidthIncludingTrailingWhitespace;
 
     private void OnContentChanged()
     {

@@ -1,6 +1,6 @@
 # Testing notes
 
-Automated tests: `dotnet test --project tests/CaptionOverlay.Core.Tests` (181 tests; 160 without a model, via
+Automated tests: `dotnet test --project tests/CaptionOverlay.Core.Tests` (196 tests; 175 without a model, via
 `-- --filter-not-trait "Category=RequiresModel"` as in CI). Tests that need a Whisper model use the models installed in
 `%LOCALAPPDATA%\CaptionOverlay\models` (or `CAPTIONOVERLAY_TEST_MODEL` / `CAPTIONOVERLAY_TEST_MODEL_<ID>`) and skip
 themselves when they are absent. `CAPTIONOVERLAY_UPDATE_WER_BASELINE=1` writes the measured German WER to
@@ -41,6 +41,7 @@ Test machine for the ✅ items: Windows 11 Pro 26200, RTX 4090, 16 cores, 3840×
 
 ## M4 — Overlay
 - ✅ Overlay shows on top, click-through in locked mode (WS_EX_TRANSPARENT), toolwindow/no-activate; edit mode (Ctrl+Alt+C) shows toolbar/frame/placeholder; content-driven height fixed (see ADR-007).
+- ✅ Rows (ADR-024): `CaptionLineSplitterTests`; app on real speech shows at most two rows, new sentences start a new row, tentative rows roll up; no flicker in 150 s.
 - ✅ Flicker (ADR-022): 6 min of real speech with every desktop frame over the overlay captured: 24 flickers before (window shrink), 0 after.
 - ✅ Stutter of other programs (ADR-023): frame meter at 240 Hz under GPU load while the local model runs; flash attention halves the stalls, animations capped at 60 fps, background priority. ⏳ Firefox video playback itself (not measurable from here).
 - ✅ Hotkeys registered; tray icon; single-instance activation opens Settings.
@@ -67,6 +68,7 @@ Test machine for the ✅ items: Windows 11 Pro 26200, RTX 4090, 16 cores, 3840×
 - ⏳ Groq key; unplug network while running.
 
 ## M8 — Settings, wizard, export
+- ✅ Transcript files (ADR-024): `TranscriptRecorderTests` cover the three split rules, continuous SRT times across a stop and start, Split now, no overwrite, format/folder change. ⏳ Tray "Split transcript now" clicked by hand.
 - ✅ Wizard: language → engine (hardware hint) → model ready → Finish starts listening and opens edit mode.
 - ✅ All eight settings tabs render; SRT/TXT auto-saved and flushed per line.
 - ✅ Bug found and fixed: opening Settings wrote half-loaded values back (guard flag reset) → added `AppSettings.Sanitize`.

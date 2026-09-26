@@ -323,7 +323,7 @@ public sealed class TranscriptionScheduler : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            var tex = ex as TranscriptionException ?? new TranscriptionException($"Transcription failed: {ex.Message}", ex) { IsTransient = false };
+            var tex = ex as TranscriptionException ?? new TranscriptionException(Loc.Format("Transcription_Failed", ex.Message), ex) { IsTransient = false };
             int attempts = _runningAttempts + 1;
             bool retry = tex.IsTransient && !tex.IsFatal && attempts < _options.MaxFinalAttempts;
             lock (_gate)
@@ -360,7 +360,7 @@ public sealed class TranscriptionScheduler : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            var tex = ex as TranscriptionException ?? new TranscriptionException($"Transcription failed: {ex.Message}", ex);
+            var tex = ex as TranscriptionException ?? new TranscriptionException(Loc.Format("Transcription_Failed", ex.Message), ex);
             if (tex.RetryAfter is { } retryAfter)
             {
                 lock (_gate)

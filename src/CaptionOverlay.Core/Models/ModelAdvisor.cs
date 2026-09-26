@@ -24,9 +24,9 @@ public sealed record BenchmarkResult(double RealTimeFactor, TimeSpan InferenceTi
 
     public string RatingText => Rating switch
     {
-        BenchmarkRating.GoodForLive => "Good for live captions",
-        BenchmarkRating.Usable => "Usable, some lag",
-        _ => "Too slow: use a smaller model or API mode",
+        BenchmarkRating.GoodForLive => Loc.Get("Benchmark_Good"),
+        BenchmarkRating.Usable => Loc.Get("Benchmark_Usable"),
+        _ => Loc.Get("Benchmark_TooSlow"),
     };
 }
 
@@ -44,20 +44,20 @@ public static class ModelAdvisor
             return new ModelRecommendation(
                 german ? "large-v3-turbo-german-q5_0" : "large-v3-turbo-q5_0",
                 false,
-                $"Dedicated GPU with {gpu.DedicatedMemoryBytes / (1024 * 1024 * 1024)} GB VRAM ({gpu.Name}): the turbo model runs well in real time.");
+                Loc.Format("Advice_Gpu", gpu.DedicatedMemoryBytes / (1024 * 1024 * 1024), gpu.Name));
         }
         if (hw.PhysicalCores >= 8)
         {
             return new ModelRecommendation("small-q5_1", false,
-                $"No suitable GPU, but {hw.PhysicalCores} CPU cores: the small model should keep up.");
+                Loc.Format("Advice_CpuSmall", hw.PhysicalCores));
         }
         if (hw.PhysicalCores >= 4)
         {
             return new ModelRecommendation("base-q5_1", true,
-                $"{hw.PhysicalCores} CPU cores and no suitable GPU: use the base model, or API mode for better quality.");
+                Loc.Format("Advice_CpuBase", hw.PhysicalCores));
         }
         return new ModelRecommendation("tiny-q5_1", true,
-            "Limited hardware: API mode is recommended; the tiny model works but quality is low.");
+            Loc.Get("Advice_Limited"));
     }
 
     public static string DefaultBenchmarkPath => Path.Combine(AppContext.BaseDirectory, "Assets", BenchmarkFixture);

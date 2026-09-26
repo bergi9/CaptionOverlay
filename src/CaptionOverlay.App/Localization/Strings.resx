@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <!--
+    UI strings, English (neutral fallback). Used from XAML as {l:Loc Key} and from code as Loc.Get / Loc.Format.
+    {0}, {1}… are string.Format arguments (with format specs such as {0:F2} or {0:P0}): keep them in every translation.
+    Core messages (errors, status, hardware advice) are in src/CaptionOverlay.Core/Localization/CoreStrings.resx.
+  -->
+
+  <!-- App -->
+  <data name="App_UnhandledError" xml:space="preserve"><value>Something went wrong: {0}
+
+Details are in the log folder.</value></data>
+  <data name="App_StartupFailed" xml:space="preserve"><value>CaptionOverlay could not start: {0}</value></data>
+
+  <!-- Shared -->
+  <data name="Common_Advanced" xml:space="preserve"><value>Advanced</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Common_Diagnostics" xml:space="preserve"><value>Diagnostics</value></data>
+  <data name="Common_Error" xml:space="preserve"><value>Error</value></data>
+  <data name="Common_Open" xml:space="preserve"><value>Open</value></data>
+  <data name="Common_Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Common_BenchmarkFailed" xml:space="preserve"><value>Benchmark failed: {0}</value></data>
+
+  <!-- Status bar, tooltip, notifications -->
+  <data name="Status_NotListening" xml:space="preserve"><value>Not listening</value></data>
+  <data name="Status_Listening" xml:space="preserve"><value>Listening ({0}){1}</value></data>
+  <data name="Status_Error" xml:space="preserve"><value>Error: {0}</value></data>
+  <data name="Status_Lagging" xml:space="preserve"><value>Lagging {0:F0} s — consider a smaller model or API mode</value></data>
+  <data name="Status_CouldNotStart" xml:space="preserve"><value>Could not start: {0}</value></data>
+  <data name="Status_NoModel" xml:space="preserve"><value>No Whisper model selected or it is not downloaded. Open Settings → Models.</value></data>
+  <data name="Notify_Stopped" xml:space="preserve"><value>CaptionOverlay stopped</value></data>
+  <data name="Notify_EngineSwitchFailed" xml:space="preserve"><value>Could not switch engine</value></data>
+  <data name="Notify_HotkeyUnavailable" xml:space="preserve"><value>Hotkey not available</value></data>
+  <data name="Notify_UpdateTitle" xml:space="preserve"><value>Update available</value></data>
+  <data name="Notify_UpdateText" xml:space="preserve"><value>CaptionOverlay {0} is available on GitHub Releases.</value></data>
+
+  <!-- Tray menu -->
+  <data name="Tray_StartListening" xml:space="preserve"><value>Start listening</value></data>
+  <data name="Tray_StopListening" xml:space="preserve"><value>Stop listening</value></data>
+  <data name="Tray_Pause" xml:space="preserve"><value>Pause captions</value></data>
+  <data name="Tray_EditOverlay" xml:space="preserve"><value>Edit overlay position</value></data>
+  <data name="Tray_ClearOverlay" xml:space="preserve"><value>Clear overlay</value></data>
+  <data name="Tray_CopyTranscript" xml:space="preserve"><value>Copy transcript</value></data>
+  <data name="Tray_OpenTranscripts" xml:space="preserve"><value>Open transcripts folder</value></data>
+  <data name="Tray_Settings" xml:space="preserve"><value>Settings…</value></data>
+  <data name="Tray_Quit" xml:space="preserve"><value>Quit</value></data>
+  <data name="Tray_Engine" xml:space="preserve"><value>Engine: {0}</value></data>
+  <data name="Tray_Local" xml:space="preserve"><value>Local – {0}</value></data>
+  <data name="Tray_Api" xml:space="preserve"><value>API – {0}</value></data>
+  <data name="Tray_NoModel" xml:space="preserve"><value>no model</value></data>
+  <data name="Tray_NoLocalModels" xml:space="preserve"><value>No local models downloaded</value></data>
+  <data name="Tray_ManageModels" xml:space="preserve"><value>Manage models…</value></data>
+
+  <!-- Overlay -->
+  <data name="Overlay_ToolbarFont" xml:space="preserve"><value>Font</value></data>
+  <data name="Overlay_SmallerText" xml:space="preserve"><value>Smaller text</value></data>
+  <data name="Overlay_LargerText" xml:space="preserve"><value>Larger text</value></data>
+  <data name="Overlay_ToolbarLines" xml:space="preserve"><value>Lines</value></data>
+  <data name="Overlay_FewerLines" xml:space="preserve"><value>Fewer lines</value></data>
+  <data name="Overlay_MoreLines" xml:space="preserve"><value>More lines</value></data>
+  <data name="Overlay_Done" xml:space="preserve"><value>Done</value></data>
+  <data name="Overlay_Placeholder" xml:space="preserve"><value>Captions appear here — drag to move, drag the edges to resize</value></data>
+
+  <!-- Settings window -->
+  <data name="Settings_Title" xml:space="preserve"><value>CaptionOverlay Settings</value></data>
+  <data name="Tab_General" xml:space="preserve"><value>General</value></data>
+  <data name="Tab_Audio" xml:space="preserve"><value>Audio</value></data>
+  <data name="Tab_Engine" xml:space="preserve"><value>Engine</value></data>
+  <data name="Tab_Models" xml:space="preserve"><value>Models</value></data>
+  <data name="Tab_Api" xml:space="preserve"><value>API</value></data>
+  <data name="Tab_Overlay" xml:space="preserve"><value>Overlay</value></data>
+  <data name="Tab_Hotkeys" xml:space="preserve"><value>Hotkeys</value></data>
+  <data name="Tab_About" xml:space="preserve"><value>About</value></data>
+
+  <!-- General -->
+  <data name="General_Appearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="General_UiLanguage" xml:space="preserve"><value>Language</value></data>
+  <data name="General_UiLanguageSystem" xml:space="preserve"><value>Windows language ({0})</value></data>
+  <data name="General_Theme" xml:space="preserve"><value>Theme</value></data>
+  <data name="General_ThemeSystem" xml:space="preserve"><value>Windows setting</value></data>
+  <data name="General_ThemeLight" xml:space="preserve"><value>Light</value></data>
+  <data name="General_ThemeDark" xml:space="preserve"><value>Dark</value></data>
+  <data name="General_Startup" xml:space="preserve"><value>Startup</value></data>
+  <data name="General_StartWithWindows" xml:space="preserve"><value>Start with Windows</value></data>
+  <data name="General_StartupEntryStale" xml:space="preserve"><value>“Start with Windows” points to an older copy of CaptionOverlay. Open Settings → General to fix it.</value></data>
+  <data name="General_FixStartupEntry" xml:space="preserve"><value>Point it to this copy</value></data>
+  <data name="General_StartListening" xml:space="preserve"><value>Start listening when the app launches</value></data>
+  <data name="General_CheckForUpdates" xml:space="preserve"><value>Tell me when a new version is available on GitHub (no automatic downloads)</value></data>
+  <data name="General_Transcripts" xml:space="preserve"><value>Transcripts</value></data>
+  <data name="General_AutoSave" xml:space="preserve"><value>Save a transcript of every session automatically</value></data>
+  <data name="General_Srt" xml:space="preserve"><value>SubRip (.srt)</value></data>
+  <data name="General_Txt" xml:space="preserve"><value>Plain text (.txt)</value></data>
+  <data name="General_Folder" xml:space="preserve"><value>Folder (empty = Documents\CaptionOverlay)</value></data>
+  <data name="General_LogText" xml:space="preserve"><value>Include caption text in log files (debugging only)</value></data>
+
+  <!-- Audio -->
+  <data name="Audio_Output" xml:space="preserve"><value>Captured output</value></data>
+  <data name="Audio_OutputHint" xml:space="preserve"><value>CaptionOverlay captions whatever this output device plays (system-wide loopback).</value></data>
+  <data name="Audio_FollowDefault" xml:space="preserve"><value>Follow system default output</value></data>
+  <data name="Audio_CurrentDefault" xml:space="preserve"><value>{0} (current default)</value></data>
+  <data name="Audio_Vad" xml:space="preserve"><value>Voice activity detection</value></data>
+  <data name="Audio_UseVad" xml:space="preserve"><value>Detect speech (recommended)</value></data>
+  <data name="Audio_UseVadHint" xml:space="preserve"><value>Turn this off for music-heavy content where speech is not detected: audio is then transcribed in fixed 5-second windows.</value></data>
+  <data name="Audio_SpeechThreshold" xml:space="preserve"><value>Speech threshold: {0:F2}</value></data>
+  <data name="Audio_SilenceThreshold" xml:space="preserve"><value>Silence threshold: {0:F2}</value></data>
+  <data name="Audio_EndSilence" xml:space="preserve"><value>Silence that ends a sentence: {0:F0} ms</value></data>
+  <data name="Audio_MaxUtterance" xml:space="preserve"><value>Longest sentence before a forced cut: {0:F0} s</value></data>
+
+  <!-- Engine -->
+  <data name="Engine_Header" xml:space="preserve"><value>Transcription engine</value></data>
+  <data name="Engine_ModeLocal" xml:space="preserve"><value>Local (Whisper on this PC)</value></data>
+  <data name="Engine_ModeApi" xml:space="preserve"><value>API (OpenAI-compatible)</value></data>
+  <data name="Engine_SpokenLanguage" xml:space="preserve"><value>Spoken language</value></data>
+  <data name="Engine_SpokenLanguageHint" xml:space="preserve"><value>Choosing the language is faster and more accurate than auto-detection. Language-specific models (e.g. German) always use their language.</value></data>
+  <data name="Engine_Model" xml:space="preserve"><value>Model</value></data>
+  <data name="Engine_ManageModels" xml:space="preserve"><value>Manage models…</value></data>
+  <data name="Engine_Partials" xml:space="preserve"><value>Show text while someone is still speaking (partial results)</value></data>
+  <data name="Engine_PartialInterval" xml:space="preserve"><value>Partial update interval: {0:F0} ms</value></data>
+  <data name="Engine_PartialModel" xml:space="preserve"><value>Separate model for partial results</value></data>
+  <data name="Engine_PartialSameModel" xml:space="preserve"><value>Same as main model</value></data>
+  <data name="Engine_PartialModelHint" xml:space="preserve"><value>A small model (tiny/base) for partials reduces load; it is kept in memory in addition to the main model.</value></data>
+  <data name="Engine_Processor" xml:space="preserve"><value>Processor</value></data>
+  <data name="Engine_GpuAuto" xml:space="preserve"><value>Auto (GPU if available)</value></data>
+  <data name="Engine_GpuCpuOnly" xml:space="preserve"><value>CPU only</value></data>
+  <data name="Engine_ProcessorHint" xml:space="preserve"><value>Changing the processor takes effect after restarting CaptionOverlay.</value></data>
+  <data name="Engine_ApiHint" xml:space="preserve"><value>API mode sends speech segments to the provider configured on the API tab.</value></data>
+  <data name="Engine_OpenApiSettings" xml:space="preserve"><value>Open API settings</value></data>
+
+  <!-- Spoken languages -->
+  <data name="Lang_auto" xml:space="preserve"><value>Auto-detect</value></data>
+  <data name="Lang_en" xml:space="preserve"><value>English</value></data>
+  <data name="Lang_de" xml:space="preserve"><value>German</value></data>
+  <data name="Lang_fr" xml:space="preserve"><value>French</value></data>
+  <data name="Lang_es" xml:space="preserve"><value>Spanish</value></data>
+  <data name="Lang_it" xml:space="preserve"><value>Italian</value></data>
+  <data name="Lang_nl" xml:space="preserve"><value>Dutch</value></data>
+  <data name="Lang_pt" xml:space="preserve"><value>Portuguese</value></data>
+  <data name="Lang_pl" xml:space="preserve"><value>Polish</value></data>
+  <data name="Lang_cs" xml:space="preserve"><value>Czech</value></data>
+  <data name="Lang_sv" xml:space="preserve"><value>Swedish</value></data>
+  <data name="Lang_da" xml:space="preserve"><value>Danish</value></data>
+  <data name="Lang_no" xml:space="preserve"><value>Norwegian</value></data>
+  <data name="Lang_fi" xml:space="preserve"><value>Finnish</value></data>
+  <data name="Lang_hu" xml:space="preserve"><value>Hungarian</value></data>
+  <data name="Lang_ro" xml:space="preserve"><value>Romanian</value></data>
+  <data name="Lang_el" xml:space="preserve"><value>Greek</value></data>
+  <data name="Lang_tr" xml:space="preserve"><value>Turkish</value></data>
+  <data name="Lang_ru" xml:space="preserve"><value>Russian</value></data>
+  <data name="Lang_uk" xml:space="preserve"><value>Ukrainian</value></data>
+  <data name="Lang_ar" xml:space="preserve"><value>Arabic</value></data>
+  <data name="Lang_hi" xml:space="preserve"><value>Hindi</value></data>
+  <data name="Lang_ja" xml:space="preserve"><value>Japanese</value></data>
+  <data name="Lang_ko" xml:space="preserve"><value>Korean</value></data>
+  <data name="Lang_zh" xml:space="preserve"><value>Chinese</value></data>
+
+  <!-- Models -->
+  <data name="Models_RecommendedModel" xml:space="preserve"><value>Recommended: {0}. {1}</value></data>
+  <data name="Models_RecommendedOrApi" xml:space="preserve"><value>Recommended: {0} — or API mode. {1}</value></data>
+  <data name="Models_CustomName" xml:space="preserve"><value>Custom model — name:</value></data>
+  <data name="Models_CustomLanguage" xml:space="preserve"><value>forced language (optional):</value></data>
+  <data name="Models_AddFile" xml:space="preserve"><value>Add model file…</value></data>
+  <data name="Models_InUse" xml:space="preserve"><value>in use</value></data>
+  <data name="Models_Recommended" xml:space="preserve"><value>recommended for this PC</value></data>
+  <data name="Models_Download" xml:space="preserve"><value>Download</value></data>
+  <data name="Models_Resume" xml:space="preserve"><value>Resume</value></data>
+  <data name="Models_Pause" xml:space="preserve"><value>Pause</value></data>
+  <data name="Models_Use" xml:space="preserve"><value>Use</value></data>
+  <data name="Models_Benchmark" xml:space="preserve"><value>Benchmark</value></data>
+  <data name="Models_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Models_Details" xml:space="preserve"><value>{0} · {1} · license: {2}</value></data>
+  <data name="Models_Multilingual" xml:space="preserve"><value>multilingual</value></data>
+  <data name="Models_UnknownLicense" xml:space="preserve"><value>unknown</value></data>
+  <data name="Models_CustomDetails" xml:space="preserve"><value>Custom file · {0}</value></data>
+  <data name="Models_CustomDetailsLanguage" xml:space="preserve"><value>Custom file · {0} · language: {1}</value></data>
+  <data name="Models_InUseCannotDelete" xml:space="preserve"><value>This model is in use. Switch to another model (or stop listening) before deleting it.</value></data>
+  <data name="Models_ConfirmRemoveCustom" xml:space="preserve"><value>Remove this custom model from the list? (The file itself is not deleted.)</value></data>
+  <data name="Models_ConfirmDelete" xml:space="preserve"><value>Delete {0} from disk?</value></data>
+  <data name="Models_Benchmarking" xml:space="preserve"><value>Benchmarking…</value></data>
+  <data name="Models_BenchmarkResult" xml:space="preserve"><value>RTF {0:F2} on {1}: {2}</value></data>
+  <data name="Models_ChooseFileTitle" xml:space="preserve"><value>Choose a whisper.cpp GGML model</value></data>
+  <data name="Models_ChooseFileFilter" xml:space="preserve"><value>Whisper GGML model (*.bin)|*.bin|All files (*.*)|*.*</value></data>
+  <data name="Models_InvalidLanguage" xml:space="preserve"><value>Forced language must be an ISO code like "de" (or empty).</value></data>
+  <data name="Models_Checking" xml:space="preserve"><value>Checking model file…</value></data>
+  <data name="Models_Added" xml:space="preserve"><value>Added {0}.</value></data>
+  <data name="Models_Installed" xml:space="preserve"><value>Installed</value></data>
+  <data name="Models_Available" xml:space="preserve"><value>Available</value></data>
+  <data name="Models_FileMissing" xml:space="preserve"><value>File missing</value></data>
+  <data name="Models_Failed" xml:space="preserve"><value>Failed</value></data>
+  <data name="Models_PausedAt" xml:space="preserve"><value>Paused at {0:P0}</value></data>
+  <data name="Models_Queued" xml:space="preserve"><value>Queued…</value></data>
+  <data name="Models_Downloading" xml:space="preserve"><value>{0:P0} · {1:F1} MB/s</value></data>
+  <data name="Models_DownloadingEta" xml:space="preserve"><value>{0:P0} · {1:F1} MB/s · {2} left</value></data>
+  <data name="Models_Verifying" xml:space="preserve"><value>Verifying (SHA-256)…</value></data>
+
+  <!-- API -->
+  <data name="Api_Header" xml:space="preserve"><value>OpenAI-compatible transcription API</value></data>
+  <data name="Api_Hint" xml:space="preserve"><value>Use this when your PC is too slow for local models. Speech segments are uploaded to the provider.</value></data>
+  <data name="Api_Provider" xml:space="preserve"><value>Provider</value></data>
+  <data name="Api_CustomProvider" xml:space="preserve"><value>Custom</value></data>
+  <data name="Api_BaseUrl" xml:space="preserve"><value>Base URL</value></data>
+  <data name="Api_Model" xml:space="preserve"><value>Model</value></data>
+  <data name="Api_Key" xml:space="preserve"><value>API key</value></data>
+  <data name="Api_SaveKey" xml:space="preserve"><value>Save key</value></data>
+  <data name="Api_KeyStored" xml:space="preserve"><value>A key is stored (encrypted for your Windows user).</value></data>
+  <data name="Api_NoKey" xml:space="preserve"><value>No key stored.</value></data>
+  <data name="Api_TestConnection" xml:space="preserve"><value>Test connection</value></data>
+  <data name="Api_Testing" xml:space="preserve"><value>Testing connection…</value></data>
+  <data name="Api_Connected" xml:space="preserve"><value>✔ Connected — round trip {0:F0} ms</value></data>
+  <data name="Api_Partials" xml:space="preserve"><value>Also send partial (in-progress) results — increases cost roughly 5–10×</value></data>
+
+  <!-- Overlay tab -->
+  <data name="Overlay_MoveResize" xml:space="preserve"><value>Move / resize overlay…</value></data>
+  <data name="Overlay_ResetStyle" xml:space="preserve"><value>Reset style</value></data>
+  <data name="Overlay_Text" xml:space="preserve"><value>Text</value></data>
+  <data name="Overlay_Font" xml:space="preserve"><value>Font</value></data>
+  <data name="Overlay_Size" xml:space="preserve"><value>Size: {0:F0}</value></data>
+  <data name="Overlay_Weight" xml:space="preserve"><value>Weight: {0:F0}</value></data>
+  <data name="Overlay_TextColor" xml:space="preserve"><value>Text color (#AARRGGBB)</value></data>
+  <data name="Overlay_OutlineColor" xml:space="preserve"><value>Outline color</value></data>
+  <data name="Overlay_OutlineThickness" xml:space="preserve"><value>Outline thickness: {0:F1}</value></data>
+  <data name="Overlay_Background" xml:space="preserve"><value>Background</value></data>
+  <data name="Overlay_BackgroundColor" xml:space="preserve"><value>Background color</value></data>
+  <data name="Overlay_Opacity" xml:space="preserve"><value>Opacity: {0:P0}</value></data>
+  <data name="Overlay_Behaviour" xml:space="preserve"><value>Behaviour</value></data>
+  <data name="Overlay_LinesShown" xml:space="preserve"><value>Lines shown: {0:F0}</value></data>
+  <data name="Overlay_FadeTimeout" xml:space="preserve"><value>Hide after {0:F0} s without speech (0 = never)</value></data>
+  <data name="Overlay_FullscreenHint" xml:space="preserve"><value>The overlay cannot appear above games in exclusive fullscreen mode. Use borderless or windowed fullscreen.</value></data>
+
+  <!-- Hotkeys -->
+  <data name="Hotkeys_Header" xml:space="preserve"><value>Global hotkeys</value></data>
+  <data name="Hotkeys_Hint" xml:space="preserve"><value>Click a field and press the key combination (with Ctrl, Alt, Shift or Win). Backspace clears it.</value></data>
+  <data name="Hotkeys_EditMode" xml:space="preserve"><value>Move / resize overlay (edit mode)</value></data>
+  <data name="Hotkeys_Pause" xml:space="preserve"><value>Pause / resume captions</value></data>
+  <data name="Hotkeys_Clear" xml:space="preserve"><value>Clear overlay</value></data>
+  <data name="Hotkeys_Invalid" xml:space="preserve"><value>'{0}' is not a valid hotkey (use e.g. Ctrl+Alt+C).</value></data>
+  <data name="Hotkeys_Taken" xml:space="preserve"><value>{0} is already used by another application.</value></data>
+
+  <!-- About -->
+  <data name="About_Runtime" xml:space="preserve"><value>Whisper runtime: {0} · .NET {1}</value></data>
+  <data name="About_RuntimeNotLoaded" xml:space="preserve"><value>not loaded yet</value></data>
+  <data name="About_CheckUpdates" xml:space="preserve"><value>Check for updates</value></data>
+  <data name="About_Releases" xml:space="preserve"><value>Releases page</value></data>
+  <data name="About_UpdateAvailable" xml:space="preserve"><value>Version {0} is available.</value></data>
+  <data name="About_UpToDate" xml:space="preserve"><value>You are running the latest version (or GitHub could not be reached).</value></data>
+  <data name="About_Privacy" xml:space="preserve"><value>Privacy</value></data>
+  <data name="About_PrivacyText" xml:space="preserve"><value>In Local mode, audio never leaves this computer: Whisper runs on your CPU/GPU. In API mode, detected speech segments are sent to the provider you configured. API keys are encrypted for your Windows user (DPAPI) and never written to logs or settings.json. Logs never contain caption text unless you turn that on for debugging.</value></data>
+  <data name="About_OpenLogs" xml:space="preserve"><value>Open log folder</value></data>
+  <data name="About_ExportDiagnostics" xml:space="preserve"><value>Export diagnostics (zip to Desktop)</value></data>
+  <data name="About_DiagnosticsSaved" xml:space="preserve"><value>Saved to {0}</value></data>
+  <data name="About_DiagnosticsFailed" xml:space="preserve"><value>Export failed: {0}</value></data>
+  <data name="About_Credits" xml:space="preserve"><value>Credits</value></data>
+  <data name="About_CreditsText" xml:space="preserve"><value>whisper.cpp / Whisper.net (MIT), OpenAI Whisper models (MIT), Silero VAD (MIT), ONNX Runtime (MIT), NAudio (MIT), H.NotifyIcon (MIT), CommunityToolkit.Mvvm (MIT), Serilog (Apache-2.0). Model licenses are listed per model on the Models tab.</value></data>
+
+  <!-- First-run wizard -->
+  <data name="Wizard_Title" xml:space="preserve"><value>Welcome to CaptionOverlay</value></data>
+  <data name="Wizard_Headline" xml:space="preserve"><value>Live captions for everything your PC plays</value></data>
+  <data name="Wizard_Intro" xml:space="preserve"><value>Three quick steps. Nothing is installed system-wide; models are stored in your user profile.</value></data>
+  <data name="Wizard_Skip" xml:space="preserve"><value>Skip setup</value></data>
+  <data name="Wizard_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Wizard_Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Wizard_Finish" xml:space="preserve"><value>Finish</value></data>
+  <data name="Wizard_Step1" xml:space="preserve"><value>1 · Which language will you mostly listen to?</value></data>
+  <data name="Wizard_Step1Hint" xml:space="preserve"><value>Picking a language makes captions faster and more accurate. For German, a specially fine-tuned model is available.</value></data>
+  <data name="Wizard_Step2" xml:space="preserve"><value>2 · Where should speech be recognized?</value></data>
+  <data name="Wizard_UseLocal" xml:space="preserve"><value>On this PC (private, free, needs a model download)</value></data>
+  <data name="Wizard_UseApi" xml:space="preserve"><value>Online API (for slow PCs; audio is sent to the provider)</value></data>
+  <data name="Wizard_Model" xml:space="preserve"><value>{0} — {1}</value></data>
+  <data name="Wizard_ModelRecommended" xml:space="preserve"><value>{0} — {1}  (recommended)</value></data>
+  <data name="Wizard_RecommendationApi" xml:space="preserve"><value>{0} API mode is a good alternative on this PC.</value></data>
+  <data name="Wizard_Step3" xml:space="preserve"><value>3 · Getting ready</value></data>
+  <data name="Wizard_StartingDownload" xml:space="preserve"><value>Starting download…</value></data>
+  <data name="Wizard_Downloading" xml:space="preserve"><value>Downloading… {0:P0} ({1:F0} of {2:F0} MB, {3:F1} MB/s)</value></data>
+  <data name="Wizard_Verifying" xml:space="preserve"><value>Verifying download…</value></data>
+  <data name="Wizard_ModelReady" xml:space="preserve"><value>Model is ready.</value></data>
+  <data name="Wizard_DownloadFailed" xml:space="preserve"><value>Download failed: {0}. Go back and try again.</value></data>
+  <data name="Wizard_DownloadPaused" xml:space="preserve"><value>Download paused.</value></data>
+  <data name="Wizard_Benchmark" xml:space="preserve"><value>Benchmark this model</value></data>
+  <data name="Wizard_RunningBenchmark" xml:space="preserve"><value>Running benchmark…</value></data>
+  <data name="Wizard_BenchmarkResult" xml:space="preserve"><value>Real-time factor {0:F2} on {1}: {2}.</value></data>
+  <data name="Wizard_TestAgain" xml:space="preserve"><value>Test again</value></data>
+  <data name="Wizard_ApiFailed" xml:space="preserve"><value>✖ {0} You can finish anyway and fix this later in Settings → API.</value></data>
+  <data name="Wizard_FinishHint" xml:space="preserve"><value>After you click Finish, captions start and the overlay is shown with a yellow frame: drag it where you want it, then click Done. Press Ctrl+Alt+C at any time to move it again.</value></data>
+</root>

@@ -20,7 +20,7 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
     {
         _app = app;
         _hardware = HardwareInfo.Query();
-        HardwareText = _hardware.ToString();
+        HardwareText = _hardware.Describe();
         Language = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName is var ui && SettingsViewModel.Languages.Any(l => l.Value == ui) ? ui : "auto";
         ApiProvider = ApiProviderPreset.Groq.Id;
         _app.Downloader.ProgressChanged += OnProgress;
@@ -32,7 +32,8 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
 
     public IReadOnlyList<Choice> Languages => SettingsViewModel.Languages;
 
-    public IReadOnlyList<Choice> ApiProviders { get; } = [.. ApiProviderPreset.All.Select(p => new Choice(p.Id, p.Name))];
+    public IReadOnlyList<Choice> ApiProviders { get; } =
+        [.. ApiProviderPreset.All.Select(p => p == ApiProviderPreset.Custom ? Choice.Localized(p.Id, "Api_CustomProvider") : new Choice(p.Id, p.Name))];
 
     public ObservableCollection<Choice> CandidateModels { get; } = [];
 
@@ -82,7 +83,7 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
 
     public bool CanGoBack => Step > 0;
 
-    public string NextLabel => Step == 2 ? "Finish" : "Next";
+    public string NextLabel => Loc.Get(Step == 2 ? "Wizard_Finish" : "Wizard_Next");
 
     partial void OnLanguageChanged(string? value) => UpdateCandidates();
 
@@ -94,12 +95,12 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
         CandidateModels.Clear();
         foreach (var m in _app.Catalog.Models.Where(m => m.IsMultilingual || m.Languages.Contains(Language ?? "")))
         {
-            string size = m.SizeBytes >= 1_000_000_000 ? $"{m.SizeBytes / 1e9:F1} GB" : $"{m.SizeBytes / 1e6:F0} MB";
-            CandidateModels.Add(new Choice(m.Id, $"{m.DisplayName} — {size}{(m.Id == rec.ModelId ? "  (recommended)" : "")}"));
+            string size = Models.ModelItemViewModel.FormatSize(m.SizeBytes);
+            CandidateModels.Add(new Choice(m.Id, m.Id == rec.ModelId ? Loc.Format("Wizard_ModelRecommended", m.DisplayName, size) : Loc.Format("Wizard_Model", m.DisplayName, size)));
         }
         SelectedModelId = rec.ModelId;
         UseLocal = !rec.SuggestApi || _hardware.PhysicalCores >= 4;
-        RecommendationText = rec.Reason + (rec.SuggestApi ? " API mode is a good alternative on this PC." : "");
+        RecommendationText = rec.SuggestApi ? Loc.Format("Wizard_RecommendationApi", rec.Reason) : rec.Reason;
     }
 
     [RelayCommand]
@@ -172,12 +173,12 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
         if (entry is null || _app.ModelStore.IsInstalled(entry))
         {
             DownloadProgress = 1;
-            DownloadText = "Model is ready.";
+            DownloadText = Loc.Get("Wizard_ModelReady");
             IsReady = true;
             return;
         }
         IsReady = false;
-        DownloadText = "Starting download…";
+        DownloadText = Loc.Get("Wizard_StartingDownload");
         _app.Downloader.Enqueue(entry);
     }
 
@@ -190,11 +191,11 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
         DownloadProgress = p.Fraction;
         DownloadText = p.State switch
         {
-            DownloadState.Downloading => $"Downloading… {p.Fraction:P0} ({p.BytesDownloaded / 1e6:F0} of {p.TotalBytes / 1e6:F0} MB, {p.BytesPerSecond / 1e6:F1} MB/s)",
-            DownloadState.Verifying => "Verifying download…",
-            DownloadState.Completed => "Model is ready.",
-            DownloadState.Failed => $"Download failed: {p.Error}. Go back and try again.",
-            DownloadState.Paused => "Download paused.",
+            DownloadState.Downloading => Loc.Format("Wizard_Downloading", p.Fraction, p.BytesDownloaded / 1e6, p.TotalBytes / 1e6, p.BytesPerSecond / 1e6),
+            DownloadState.Verifying => Loc.Get("Wizard_Verifying"),
+            DownloadState.Completed => Loc.Get("Wizard_ModelReady"),
+            DownloadState.Failed => Loc.Format("Wizard_DownloadFailed", p.Error),
+            DownloadState.Paused => Loc.Get("Wizard_DownloadPaused"),
             _ => DownloadText,
         };
         IsReady = p.State == DownloadState.Completed;
@@ -208,23 +209,23 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
         {
             return;
         }
-        BenchmarkText = "Running benchmark…";
+        BenchmarkText = Loc.Get("Wizard_RunningBenchmark");
         try
         {
             await using var t = await LocalWhisperTranscriber.LoadAsync(new LocalWhisperOptions { ModelPath = model.Path }, _app.Settings.Engine.Gpu);
             var r = await ModelAdvisor.BenchmarkAsync(t);
-            BenchmarkText = $"Real-time factor {r.RealTimeFactor:F2} on {r.Runtime}: {r.RatingText}.";
+            BenchmarkText = Loc.Format("Wizard_BenchmarkResult", r.RealTimeFactor, r.Runtime, r.RatingText);
         }
         catch (Exception ex)
         {
-            BenchmarkText = $"Benchmark failed: {ex.Message}";
+            BenchmarkText = Loc.Format("Common_BenchmarkFailed", ex.Message);
         }
     }
 
     [RelayCommand]
     private async Task TestApiAsync()
     {
-        ApiResult = "Testing connection…";
+        ApiResult = Loc.Get("Api_Testing");
         var preset = ApiProviderPreset.Find(ApiProvider);
         try
         {
@@ -236,11 +237,11 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
                 ProviderName = preset.Name,
             });
             var latency = await t.TestConnectionAsync(CancellationToken.None);
-            ApiResult = $"✔ Connected ({latency.TotalMilliseconds:F0} ms).";
+            ApiResult = Loc.Format("Api_Connected", latency.TotalMilliseconds);
         }
         catch (Exception ex)
         {
-            ApiResult = $"✖ {ex.Message} You can finish anyway and fix this later in Settings → API.";
+            ApiResult = Loc.Format("Wizard_ApiFailed", ex.Message);
         }
     }
 

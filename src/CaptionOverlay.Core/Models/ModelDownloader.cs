@@ -123,7 +123,7 @@ public sealed class ModelDownloader : IDisposable
         if (!string.Equals(hash, entry.Sha256, StringComparison.OrdinalIgnoreCase))
         {
             File.Delete(partPath);
-            throw new ModelDownloadException("The downloaded file is corrupted or was modified (SHA-256 mismatch). It has been deleted; please try again.");
+            throw new ModelDownloadException(Loc.Get("Download_HashMismatch"));
         }
 
         File.Move(partPath, finalPath, overwrite: true);
@@ -153,7 +153,7 @@ public sealed class ModelDownloader : IDisposable
         }
         if (!response.IsSuccessStatusCode)
         {
-            throw new ModelDownloadException($"Download failed: HTTP {(int)response.StatusCode} {response.ReasonPhrase}");
+            throw new ModelDownloadException(Loc.Format("Download_HttpFailed", (int)response.StatusCode, response.ReasonPhrase));
         }
 
         bool resumed = response.StatusCode == HttpStatusCode.PartialContent;
@@ -212,7 +212,7 @@ public sealed class ModelDownloader : IDisposable
             if (drive.IsReady && drive.AvailableFreeSpace < required)
             {
                 throw new ModelDownloadException(
-                    $"Not enough disk space: {required / (1024 * 1024)} MB needed, {drive.AvailableFreeSpace / (1024 * 1024)} MB free on {root}.");
+                    Loc.Format("Download_DiskSpace", required / (1024 * 1024), drive.AvailableFreeSpace / (1024 * 1024), root));
             }
         }
         catch (ArgumentException)
@@ -299,8 +299,8 @@ public sealed class ModelDownloader : IDisposable
                 string message = ex switch
                 {
                     ModelDownloadException => ex.Message,
-                    HttpRequestException => $"Network error: {ex.Message}",
-                    IOException => $"Disk error: {ex.Message}",
+                    HttpRequestException => Loc.Format("Common_NetworkError", ex.Message),
+                    IOException => Loc.Format("Download_DiskError", ex.Message),
                     _ => ex.Message,
                 };
                 Report(new DownloadProgress(entry.Id, DownloadState.Failed, _store.PartialBytes(entry), entry.SizeBytes, 0, null, message));

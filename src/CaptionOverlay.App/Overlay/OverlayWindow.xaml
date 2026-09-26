@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:CaptionOverlay.App.Overlay"
+        xmlns:l="clr-namespace:CaptionOverlay.App.Localization"
         Title="CaptionOverlay"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -37,17 +38,17 @@
                     CornerRadius="6" Background="#E0202430"
                     Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVis}}">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Font" Foreground="White" VerticalAlignment="Center" Margin="4,0" />
-                    <Button Style="{StaticResource ToolButton}" Content="−" Command="{Binding DecreaseFontCommand}" ToolTip="Smaller text" />
-                    <Button Style="{StaticResource ToolButton}" Content="+" Command="{Binding IncreaseFontCommand}" ToolTip="Larger text" />
-                    <TextBlock Text="Lines" Foreground="White" VerticalAlignment="Center" Margin="10,0,4,0" />
-                    <Button Style="{StaticResource ToolButton}" Content="−" Command="{Binding FewerLinesCommand}" ToolTip="Fewer lines" />
+                    <TextBlock Text="{l:Loc Overlay_ToolbarFont}" Foreground="White" VerticalAlignment="Center" Margin="4,0" />
+                    <Button Style="{StaticResource ToolButton}" Content="−" Command="{Binding DecreaseFontCommand}" ToolTip="{l:Loc Overlay_SmallerText}" />
+                    <Button Style="{StaticResource ToolButton}" Content="+" Command="{Binding IncreaseFontCommand}" ToolTip="{l:Loc Overlay_LargerText}" />
+                    <TextBlock Text="{l:Loc Overlay_ToolbarLines}" Foreground="White" VerticalAlignment="Center" Margin="10,0,4,0" />
+                    <Button Style="{StaticResource ToolButton}" Content="−" Command="{Binding FewerLinesCommand}" ToolTip="{l:Loc Overlay_FewerLines}" />
                     <TextBlock Text="{Binding LinesShown}" Foreground="White" VerticalAlignment="Center" Margin="4,0" />
-                    <Button Style="{StaticResource ToolButton}" Content="+" Command="{Binding MoreLinesCommand}" ToolTip="More lines" />
-                    <TextBlock Text="Background" Foreground="White" VerticalAlignment="Center" Margin="10,0,4,0" />
+                    <Button Style="{StaticResource ToolButton}" Content="+" Command="{Binding MoreLinesCommand}" ToolTip="{l:Loc Overlay_MoreLines}" />
+                    <TextBlock Text="{l:Loc Overlay_Background}" Foreground="White" VerticalAlignment="Center" Margin="10,0,4,0" />
                     <Slider x:Name="OpacitySlider" Width="90" Minimum="0" Maximum="1" VerticalAlignment="Center" Focusable="False"
                             Value="{Binding BackgroundOpacity}" PreviewMouseUp="OpacitySlider_OnMouseUp" />
-                    <Button Style="{StaticResource ToolButton}" Content="Done" Margin="10,0,2,0" Command="{Binding DoneCommand}" FontWeight="SemiBold" />
+                    <Button Style="{StaticResource ToolButton}" Content="{l:Loc Overlay_Done}" Margin="10,0,2,0" Command="{Binding DoneCommand}" FontWeight="SemiBold" />
                 </StackPanel>
             </Border>
 
@@ -120,7 +121,7 @@
 
                     <!-- Edit-mode placeholder -->
                     <StackPanel Visibility="{Binding ShowPlaceholder, Converter={StaticResource BoolToVis}}">
-                        <local:OutlinedTextBlock Text="Captions appear here — drag to move, drag the edges to resize"
+                        <local:OutlinedTextBlock Text="{l:Loc Overlay_Placeholder}"
                                                  FontFamily="{Binding FontFamily}" FontSize="{Binding FontSize}" FontWeight="{Binding FontWeight}"
                                                  Fill="{Binding TextBrush}" Stroke="{Binding OutlineBrush}" StrokeThickness="{Binding OutlineThickness}" />
                     </StackPanel>

@@ -1,6 +1,6 @@
 # Testing notes
 
-Automated tests: `dotnet test --project tests/CaptionOverlay.Core.Tests` (126 tests; 105 without a model, via
+Automated tests: `dotnet test --project tests/CaptionOverlay.Core.Tests` (142 tests; 121 without a model, via
 `-- --filter-not-trait "Category=RequiresModel"` as in CI). Tests that need a Whisper model use the models installed in
 `%LOCALAPPDATA%\CaptionOverlay\models` (or `CAPTIONOVERLAY_TEST_MODEL` / `CAPTIONOVERLAY_TEST_MODEL_<ID>`) and skip
 themselves when they are absent. `CAPTIONOVERLAY_UPDATE_WER_BASELINE=1` writes the measured German WER to
@@ -62,6 +62,8 @@ Test machine for the ✅ items: Windows 11 Pro 26200, RTX 4090, 16 cores, 3840×
 - ✅ Wizard: language → engine (hardware hint) → model ready → Finish starts listening and opens edit mode.
 - ✅ All eight settings tabs render; SRT/TXT auto-saved and flushed per line.
 - ✅ Bug found and fixed: opening Settings wrote half-loaded values back (guard flag reset) → added `AppSettings.Sanitize`.
+- ✅ Dark mode and German UI (ADR-017): all tabs, wizard, overlay toolbar and tray in German and English, light and dark; switching language or theme in Settings updates open windows immediately and is saved. Default follows Windows (display language en-GB → English, dark app mode → dark). Resource completeness and key usage covered by `ResourceFileTests`.
+- ⏳ German Windows display language on a clean profile (only simulated through the setting here).
 - ⏳ Fresh profile to captions in < 3 min; SRT against a real video within 0.5 s.
 
 ## M9 — Packaging

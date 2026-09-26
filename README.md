@@ -10,6 +10,7 @@ click-through overlay.
   such as *whisper-large-v3-turbo-german*.
 - GPU acceleration through Vulkan (NVIDIA / AMD / Intel with the normal driver), CPU fallback.
 - Silero VAD, partial (in-progress) captions, hallucination filter, SRT/TXT transcripts.
+- English and German UI (follows the Windows display language; can be changed in Settings), light and dark mode.
 
 ## Using it
 See [`packaging/README.txt`](packaging/README.txt) (shipped in the zip). Hotkeys: `Ctrl+Alt+C` move/resize,

@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="CaptionOverlay.Core.Tests" />
+    <Using Include="CaptionOverlay.Core.Localization" />
   </ItemGroup>
 
   <!--

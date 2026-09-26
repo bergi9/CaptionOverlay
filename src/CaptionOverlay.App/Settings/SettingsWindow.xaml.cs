@@ -17,6 +17,7 @@ public partial class SettingsWindow : Window
         Closed += (_, _) => vm.Dispose();
     }
 
+    /// <summary>Selects a tab by its English name ("Models"), matching the TabItem's x:Name ("ModelsTab"); headers are localized.</summary>
     public void SelectTab(string? name)
     {
         if (name is null)
@@ -25,7 +26,7 @@ public partial class SettingsWindow : Window
         }
         foreach (TabItem tab in Tabs.Items)
         {
-            if (string.Equals(tab.Header as string, name, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(tab.Name, name + "Tab", StringComparison.OrdinalIgnoreCase))
             {
                 Tabs.SelectedItem = tab;
             }

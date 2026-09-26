@@ -13,8 +13,33 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace CaptionOverlay.App.Settings;
 
-public sealed record Choice(string? Value, string Label)
+/// <summary>
+/// ComboBox entry (bind with <c>DisplayMemberPath="Label"</c>). The label is a function, so <see cref="Refresh"/> can
+/// re-translate it in place after a UI language change without touching the selection.
+/// </summary>
+public sealed class Choice : ObservableObject
 {
+    private readonly Func<string> _label;
+
+    public Choice(string? value, string label)
+        : this(value, () => label)
+    {
+    }
+
+    public Choice(string? value, Func<string> label)
+    {
+        Value = value;
+        _label = label;
+    }
+
+    public string? Value { get; }
+
+    public string Label => _label();
+
+    public static Choice Localized(string? value, string key) => new(value, () => Loc.Get(key));
+
+    public void Refresh() => OnPropertyChanged(nameof(Label));
+
     public override string ToString() => Label;
 }
 
@@ -24,13 +49,14 @@ public sealed record Choice(string? Value, string Label)
 /// </summary>
 public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 {
+    /// <summary>Spoken languages for Whisper (labels in the UI language).</summary>
     public static readonly IReadOnlyList<Choice> Languages =
     [
-        new("auto", "Auto-detect"), new("en", "English"), new("de", "German"), new("fr", "French"), new("es", "Spanish"),
-        new("it", "Italian"), new("nl", "Dutch"), new("pt", "Portuguese"), new("pl", "Polish"), new("cs", "Czech"),
-        new("sv", "Swedish"), new("da", "Danish"), new("no", "Norwegian"), new("fi", "Finnish"), new("hu", "Hungarian"),
-        new("ro", "Romanian"), new("el", "Greek"), new("tr", "Turkish"), new("ru", "Russian"), new("uk", "Ukrainian"),
-        new("ar", "Arabic"), new("hi", "Hindi"), new("ja", "Japanese"), new("ko", "Korean"), new("zh", "Chinese"),
+        .. new[]
+        {
+            "auto", "en", "de", "fr", "es", "it", "nl", "pt", "pl", "cs", "sv", "da", "no", "fi", "hu", "ro", "el", "tr", "ru", "uk",
+            "ar", "hi", "ja", "ko", "zh",
+        }.Select(code => Choice.Localized(code, "Lang_" + code)),
     ];
 
     private readonly AppController _app;
@@ -44,9 +70,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Models = new ModelManagerViewModel(app);
         Models.InstalledChanged += RefreshModelChoices;
         _app.PropertyChanged += OnAppChanged;
+        Loc.CultureChanged += OnCultureChanged;
 
         FontFamilies = [.. Fonts.SystemFontFamilies.Select(f => f.Source).Order(StringComparer.CurrentCultureIgnoreCase)];
-        ApiProviders = [.. ApiProviderPreset.All.Select(p => new Choice(p.Id, p.Name))];
+        ApiProviders = [.. ApiProviderPreset.All.Select(p => p == ApiProviderPreset.Custom ? Choice.Localized(p.Id, "Api_CustomProvider") : new Choice(p.Id, p.Name))];
         RefreshDevices();
         RefreshModelChoices();
         Load();
@@ -57,13 +84,35 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     public IReadOnlyList<Choice> LanguageChoices => Languages;
 
+    /// <summary>UI languages: "system" plus each translation, named in its own language.</summary>
+    public IReadOnlyList<Choice> UiLanguageChoices { get; } =
+    [
+        new(Loc.SystemLanguage, () => Loc.Format("General_UiLanguageSystem", NativeName(Loc.Resolve(Loc.SystemLanguage, Loc.SystemUICulture)))),
+        .. Loc.SupportedLanguages.Select(code => new Choice(code, NativeName(CultureInfo.GetCultureInfo(code)))),
+    ];
+
+    public IReadOnlyList<Choice> ThemeChoices { get; } =
+    [
+        Choice.Localized(nameof(AppTheme.System), "General_ThemeSystem"),
+        Choice.Localized(nameof(AppTheme.Light), "General_ThemeLight"),
+        Choice.Localized(nameof(AppTheme.Dark), "General_ThemeDark"),
+    ];
+
     public IReadOnlyList<string> FontFamilies { get; }
 
     public IReadOnlyList<Choice> ApiProviders { get; }
 
-    public IReadOnlyList<Choice> EngineModes { get; } = [new(nameof(Core.Settings.EngineMode.Local), "Local (Whisper on this PC)"), new(nameof(Core.Settings.EngineMode.Api), "API (OpenAI-compatible)")];
+    public IReadOnlyList<Choice> EngineModes { get; } =
+    [
+        Choice.Localized(nameof(Core.Settings.EngineMode.Local), "Engine_ModeLocal"),
+        Choice.Localized(nameof(Core.Settings.EngineMode.Api), "Engine_ModeApi"),
+    ];
 
-    public IReadOnlyList<Choice> GpuChoices { get; } = [new(nameof(GpuPreference.Auto), "Auto (GPU if available)"), new(nameof(GpuPreference.CpuOnly), "CPU only")];
+    public IReadOnlyList<Choice> GpuChoices { get; } =
+    [
+        Choice.Localized(nameof(GpuPreference.Auto), "Engine_GpuAuto"),
+        Choice.Localized(nameof(GpuPreference.CpuOnly), "Engine_GpuCpuOnly"),
+    ];
 
     public ObservableCollection<Choice> Devices { get; } = [];
 
@@ -79,13 +128,15 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     public string VersionText => $"CaptionOverlay {UpdateChecker.CurrentVersionText}";
 
-    public string RuntimeText => $"Whisper runtime: {_app.Pipeline.RuntimeDescription ?? "not loaded yet"} · .NET {Environment.Version}";
+    public string RuntimeText => Loc.Format("About_Runtime", _app.Pipeline.RuntimeDescription ?? Loc.Get("About_RuntimeNotLoaded"), Environment.Version);
 
     public string LogsFolder => AppPaths.LogsDir;
 
-    public string? UpdateText => _app.AvailableUpdate is { } u ? $"Version {u.Tag} is available." : null;
+    public string? UpdateText => _app.AvailableUpdate is { } u ? Loc.Format("About_UpdateAvailable", u.Tag) : null;
 
     // ───── General ─────
+    [ObservableProperty] public partial string? GeneralUiLanguage { get; set; }
+    [ObservableProperty] public partial string? GeneralTheme { get; set; }
     [ObservableProperty] public partial bool GeneralStartWithWindows { get; set; }
     [ObservableProperty] public partial bool GeneralStartListeningOnLaunch { get; set; }
     [ObservableProperty] public partial bool GeneralCheckForUpdates { get; set; }
@@ -149,11 +200,20 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     public bool IsCustomProvider => ApiProvider == ApiProviderPreset.Custom.Id;
 
-    public string? ApiKeyForDisplay => _app.GetApiKey(ApiProvider ?? "") is { Length: > 0 } ? "A key is stored (encrypted for your Windows user)." : "No key stored.";
+    public string? ApiKeyForDisplay => Loc.Get(_app.GetApiKey(ApiProvider ?? "") is { Length: > 0 } ? "Api_KeyStored" : "Api_NoKey");
+
+    private static string NativeName(CultureInfo culture)
+    {
+        var neutral = culture.IsNeutralCulture ? culture : culture.Parent;
+        string name = neutral.NativeName;
+        return name.Length > 0 ? char.ToUpper(name[0], neutral) + name[1..] : neutral.Name;
+    }
 
     private void Load()
     {
         var g = _s.General;
+        GeneralUiLanguage = Loc.SupportedLanguages.Contains(g.UiLanguage) ? g.UiLanguage : Loc.SystemLanguage;
+        GeneralTheme = g.Theme.ToString();
         GeneralStartWithWindows = g.StartWithWindows;
         GeneralStartListeningOnLaunch = g.StartListeningOnLaunch;
         GeneralCheckForUpdates = g.CheckForUpdates;
@@ -244,6 +304,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private void WriteBack()
     {
         var g = _s.General;
+        g.UiLanguage = GeneralUiLanguage ?? Loc.SystemLanguage;
+        g.Theme = Enum.TryParse<AppTheme>(GeneralTheme, out var theme) ? theme : AppTheme.System;
         g.StartWithWindows = GeneralStartWithWindows;
         g.StartListeningOnLaunch = GeneralStartListeningOnLaunch;
         g.CheckForUpdates = GeneralCheckForUpdates;
@@ -318,7 +380,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task TestConnection()
     {
-        ApiTestResult = "Testing…";
+        ApiTestResult = Loc.Get("Api_Testing");
         var preset = ApiProviderPreset.Find(ApiProvider);
         try
         {
@@ -330,7 +392,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                 ProviderName = preset.Name,
             });
             var latency = await t.TestConnectionAsync(CancellationToken.None);
-            ApiTestResult = $"✔ Connected — round trip {latency.TotalMilliseconds:F0} ms";
+            ApiTestResult = Loc.Format("Api_Connected", latency.TotalMilliseconds);
         }
         catch (Exception ex)
         {
@@ -343,12 +405,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     {
         string? current = AudioDeviceId;
         Devices.Clear();
-        Devices.Add(new Choice("", "Follow system default output"));
+        Devices.Add(Choice.Localized("", "Audio_FollowDefault"));
         try
         {
             foreach (var d in WasapiLoopbackSource.GetOutputDevices())
             {
-                Devices.Add(new Choice(d.Id, d.Name + (d.IsDefault ? " (current default)" : "")));
+                Devices.Add(new Choice(d.Id, () => d.IsDefault ? Loc.Format("Audio_CurrentDefault", d.Name) : d.Name));
             }
         }
         catch (Exception)
@@ -370,7 +432,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         string? partial = EnginePartialModelId;
         ModelChoices.Clear();
         PartialModelChoices.Clear();
-        PartialModelChoices.Add(new Choice("", "Same as main model"));
+        PartialModelChoices.Add(Choice.Localized("", "Engine_PartialSameModel"));
         foreach (var m in installed)
         {
             ModelChoices.Add(new Choice(m.Id, m.DisplayName));
@@ -423,11 +485,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         {
             string folder = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             string zip = DiagnosticsExporter.Export(_s, _app.Pipeline.RuntimeDescription, folder);
-            DiagnosticsResult = $"Saved to {zip}";
+            DiagnosticsResult = Loc.Format("About_DiagnosticsSaved", zip);
         }
         catch (Exception ex)
         {
-            DiagnosticsResult = $"Export failed: {ex.Message}";
+            DiagnosticsResult = Loc.Format("About_DiagnosticsFailed", ex.Message);
         }
     }
 
@@ -438,7 +500,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(UpdateText));
         if (_app.AvailableUpdate is null)
         {
-            DiagnosticsResult = "You are running the latest version (or GitHub could not be reached).";
+            DiagnosticsResult = Loc.Get("About_UpToDate");
         }
     }
 
@@ -465,10 +527,27 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
     }
 
-    public static string FormatMs(double ms) => ms.ToString("F0", CultureInfo.InvariantCulture) + " ms";
+    /// <summary>
+    /// UI language changed: XAML text follows by itself ({l:Loc}); re-translate choice labels in place and re-read
+    /// every computed text. Deferred, because the change arrives from inside the language ComboBox's selection update.
+    /// </summary>
+    private void OnCultureChanged() => System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
+    {
+        foreach (var choice in Languages.Concat(UiLanguageChoices).Concat(ThemeChoices).Concat(ApiProviders).Concat(EngineModes)
+                     .Concat(GpuChoices).Concat(Devices).Concat(PartialModelChoices))
+        {
+            choice.Refresh();
+        }
+        bool wasLoading = _loading;
+        _loading = true;
+        OnPropertyChanged(string.Empty);
+        _loading = wasLoading;
+        Models.Rebuild();
+    });
 
     public void Dispose()
     {
+        Loc.CultureChanged -= OnCultureChanged;
         _app.PropertyChanged -= OnAppChanged;
         Models.InstalledChanged -= RefreshModelChoices;
         Models.Dispose();

@@ -18,6 +18,10 @@ public sealed record HardwareSummary(
         var gpus = Gpus.Count == 0 ? "none detected" : string.Join("; ", Gpus.Select(g => $"{g.Name} ({g.DedicatedMemoryBytes / (1024 * 1024)} MB)"));
         return $"CPU: {PhysicalCores} cores / {LogicalProcessors} threads, RAM: {TotalMemoryBytes / (1024 * 1024 * 1024.0):F1} GB, GPU: {gpus}";
     }
+
+    /// <summary>Localized one-line summary for the UI (<see cref="ToString"/> stays English for logs and diagnostics).</summary>
+    public string Describe() => Loc.Format("Hardware_Summary", PhysicalCores, LogicalProcessors, TotalMemoryBytes / (1024 * 1024 * 1024.0),
+        Gpus.Count == 0 ? Loc.Get("Hardware_NoGpu") : string.Join("; ", Gpus.Select(g => $"{g.Name} ({g.DedicatedMemoryBytes / (1024 * 1024)} MB)")));
 }
 
 public static partial class HardwareInfo

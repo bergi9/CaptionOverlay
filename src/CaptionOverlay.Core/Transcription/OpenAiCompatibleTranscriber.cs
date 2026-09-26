@@ -44,7 +44,7 @@ public sealed class OpenAiCompatibleTranscriber : ITranscriber
         if (!Uri.TryCreate(options.BaseUrl.TrimEnd('/') + "/", UriKind.Absolute, out var baseUri)
             || (baseUri.Scheme != Uri.UriSchemeHttps && baseUri.Scheme != Uri.UriSchemeHttp))
         {
-            throw new TranscriptionException($"Invalid API base URL: {options.BaseUrl}") { IsFatal = true };
+            throw new TranscriptionException(Loc.Format("Api_InvalidBaseUrl", options.BaseUrl)) { IsFatal = true };
         }
 
         _options = options;
@@ -123,11 +123,11 @@ public sealed class OpenAiCompatibleTranscriber : ITranscriber
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
-            throw new TranscriptionException("The API did not respond in time.") { IsTransient = true };
+            throw new TranscriptionException(Loc.Get("Api_Timeout")) { IsTransient = true };
         }
         catch (HttpRequestException ex)
         {
-            throw new TranscriptionException($"Network error: {ex.Message}", ex) { IsTransient = true };
+            throw new TranscriptionException(Loc.Format("Common_NetworkError", ex.Message), ex) { IsTransient = true };
         }
 
         using (response)
@@ -137,14 +137,14 @@ public sealed class OpenAiCompatibleTranscriber : ITranscriber
 
             if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
             {
-                throw new TranscriptionException("API key rejected. Check the key in Settings → API.") { IsFatal = true };
+                throw new TranscriptionException(Loc.Get("Api_KeyRejected")) { IsFatal = true };
             }
             if (response.StatusCode == HttpStatusCode.TooManyRequests)
             {
                 var retryAfter = response.Headers.RetryAfter?.Delta
                     ?? (response.Headers.RetryAfter?.Date is { } date ? date - DateTimeOffset.UtcNow : (TimeSpan?)null)
                     ?? TimeSpan.FromSeconds(5);
-                throw new TranscriptionException("API rate limit reached; backing off.") { IsTransient = true, RetryAfter = retryAfter };
+                throw new TranscriptionException(Loc.Get("Api_RateLimited")) { IsTransient = true, RetryAfter = retryAfter };
             }
             if (response.StatusCode == HttpStatusCode.BadRequest && verbose && body.Contains("response_format", StringComparison.OrdinalIgnoreCase))
             {
@@ -154,11 +154,11 @@ public sealed class OpenAiCompatibleTranscriber : ITranscriber
             }
             if ((int)response.StatusCode >= 500)
             {
-                throw new TranscriptionException($"API server error ({(int)response.StatusCode}).") { IsTransient = true };
+                throw new TranscriptionException(Loc.Format("Api_ServerError", (int)response.StatusCode)) { IsTransient = true };
             }
             if (!response.IsSuccessStatusCode)
             {
-                throw new TranscriptionException($"API error ({(int)response.StatusCode}): {ExtractError(body)}") { IsFatal = response.StatusCode == HttpStatusCode.NotFound };
+                throw new TranscriptionException(Loc.Format("Api_Error", (int)response.StatusCode, ExtractError(body))) { IsFatal = response.StatusCode == HttpStatusCode.NotFound };
             }
 
             return Parse(body);
@@ -194,11 +194,11 @@ public sealed class OpenAiCompatibleTranscriber : ITranscriber
         }
         catch (JsonException ex)
         {
-            throw new TranscriptionException("The API returned an unexpected response.", ex);
+            throw new TranscriptionException(Loc.Get("Api_UnexpectedResponse"), ex);
         }
         if (parsed is null)
         {
-            throw new TranscriptionException("The API returned an empty response.");
+            throw new TranscriptionException(Loc.Get("Api_EmptyResponse"));
         }
 
         var segments = parsed.Segments?.Select(s => new TranscribedSegment(

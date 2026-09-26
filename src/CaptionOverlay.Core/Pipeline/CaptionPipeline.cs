@@ -79,7 +79,7 @@ public sealed class CaptionPipeline : IAsyncDisposable
             }
 
             _config = config;
-            SetStatus(new PipelineStatus(PipelineState.LoadingModel, "Loading model…"));
+            SetStatus(new PipelineStatus(PipelineState.LoadingModel, Loc.Get("Pipeline_LoadingModel")));
             try
             {
                 _transcribers = await transcriberFactory(ct).ConfigureAwait(false);
@@ -169,7 +169,7 @@ public sealed class CaptionPipeline : IAsyncDisposable
                 return;
             }
             var previous = Status;
-            SetStatus(new PipelineStatus(PipelineState.LoadingModel, "Loading model…"));
+            SetStatus(new PipelineStatus(PipelineState.LoadingModel, Loc.Get("Pipeline_LoadingModel")));
             TranscriberSet next;
             try
             {
@@ -208,7 +208,7 @@ public sealed class CaptionPipeline : IAsyncDisposable
         }
         _paused = paused;
         SetStatus(paused
-            ? new PipelineStatus(PipelineState.Paused, "Captions paused")
+            ? new PipelineStatus(PipelineState.Paused, Loc.Get("Pipeline_Paused"))
             : new PipelineStatus(PipelineState.Listening, RuntimeDescription));
     }
 
@@ -372,7 +372,7 @@ public sealed class CaptionPipeline : IAsyncDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Audio processing failed");
-            SetStatus(new PipelineStatus(PipelineState.Error, $"Audio processing failed: {ex.Message}"));
+            SetStatus(new PipelineStatus(PipelineState.Error, Loc.Format("Pipeline_AudioFailed", ex.Message)));
             return;
         }
 

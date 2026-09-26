@@ -146,7 +146,7 @@ public sealed class WasapiLoopbackSource : IAudioSource
         if (device is null)
         {
             _logger.LogWarning("No active output device; waiting for one to appear");
-            StatusChanged?.Invoke("No audio output device available.");
+            StatusChanged?.Invoke(Loc.Get("Audio_NoDevice"));
             return;
         }
 
@@ -163,7 +163,7 @@ public sealed class WasapiLoopbackSource : IAudioSource
         _capture.StartRecording();
         _logger.LogInformation("Loopback capture started on {Device} ({Rate} Hz, {Channels} ch, {Bits} bit {Encoding})",
             device.FriendlyName, SourceFormat.SampleRate, SourceFormat.Channels, SourceFormat.BitsPerSample, SourceFormat.Encoding);
-        StatusChanged?.Invoke($"Capturing: {device.FriendlyName}");
+        StatusChanged?.Invoke(Loc.Format("Audio_Capturing", device.FriendlyName));
     }
 
     private void StopCaptureLocked()
@@ -271,7 +271,7 @@ public sealed class WasapiLoopbackSource : IAudioSource
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to restart loopback capture");
-                StatusChanged?.Invoke($"Audio capture error: {ex.Message}");
+                StatusChanged?.Invoke(Loc.Format("Audio_CaptureError", ex.Message));
             }
             finally
             {

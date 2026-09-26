@@ -19,6 +19,10 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Windows display language until the settings are loaded (AppController applies the saved choice).
+        Loc.AddResources(Localization.UiStrings.ResourceManager);
+        Loc.SetLanguage(Loc.SystemLanguage);
+
         _instance = SingleInstance.TryAcquire(() => Dispatcher.InvokeAsync(() => _controller?.ShowSettings()));
         if (_instance is null)
         {
@@ -43,7 +47,7 @@ public partial class App : Application
         DispatcherUnhandledException += (_, args) =>
         {
             logger.LogError(args.Exception, "Unhandled UI exception");
-            MessageBox.Show($"Something went wrong: {args.Exception.Message}\n\nDetails are in the log folder.", "CaptionOverlay",
+            MessageBox.Show(Loc.Format("App_UnhandledError", args.Exception.Message), "CaptionOverlay",
                 MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
         };
@@ -62,7 +66,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             logger.LogCritical(ex, "Startup failed");
-            MessageBox.Show($"CaptionOverlay could not start: {ex.Message}", "CaptionOverlay", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(Loc.Format("App_StartupFailed", ex.Message), "CaptionOverlay", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
         }
     }

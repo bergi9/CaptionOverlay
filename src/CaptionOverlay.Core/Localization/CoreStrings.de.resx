@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <!-- Core messages, German. Missing keys fall back to CoreStrings.resx (English). -->
+  <data name="Pipeline_LoadingModel" xml:space="preserve"><value>Modell wird geladen …</value></data>
+  <data name="Pipeline_Paused" xml:space="preserve"><value>Untertitel pausiert</value></data>
+  <data name="Pipeline_AudioFailed" xml:space="preserve"><value>Audioverarbeitung fehlgeschlagen: {0}</value></data>
+  <data name="Audio_NoDevice" xml:space="preserve"><value>Kein Audio-Ausgabegerät verfügbar.</value></data>
+  <data name="Audio_Capturing" xml:space="preserve"><value>Aufnahme von: {0}</value></data>
+  <data name="Audio_CaptureError" xml:space="preserve"><value>Fehler bei der Audioaufnahme: {0}</value></data>
+  <data name="Whisper_ModelNotFound" xml:space="preserve"><value>Modelldatei nicht gefunden: {0}</value></data>
+  <data name="Whisper_RuntimeMissing" xml:space="preserve"><value>Die Whisper-Laufzeit (native Bibliotheken im Ordner „runtimes“ neben der App) konnte nicht geladen werden. Entpacke das CaptionOverlay-ZIP noch einmal vollständig.</value></data>
+  <data name="Whisper_InvalidModel" xml:space="preserve"><value>Diese Datei konnte nicht als Whisper-GGML-Modell geladen werden. Wähle eine whisper.cpp-Datei „ggml-*.bin“ (Transformers-Dateien .safetensors/.pt werden nicht unterstützt).</value></data>
+  <data name="Transcription_Failed" xml:space="preserve"><value>Transkription fehlgeschlagen: {0}</value></data>
+  <data name="Common_NetworkError" xml:space="preserve"><value>Netzwerkfehler: {0}</value></data>
+  <data name="Api_InvalidBaseUrl" xml:space="preserve"><value>Ungültige API-Basis-URL: {0}</value></data>
+  <data name="Api_Timeout" xml:space="preserve"><value>Die API hat nicht rechtzeitig geantwortet.</value></data>
+  <data name="Api_KeyRejected" xml:space="preserve"><value>API-Schlüssel abgelehnt. Prüfe den Schlüssel unter Einstellungen → API.</value></data>
+  <data name="Api_RateLimited" xml:space="preserve"><value>API-Ratenlimit erreicht; neuer Versuch gleich.</value></data>
+  <data name="Api_ServerError" xml:space="preserve"><value>API-Serverfehler ({0}).</value></data>
+  <data name="Api_Error" xml:space="preserve"><value>API-Fehler ({0}): {1}</value></data>
+  <data name="Api_UnexpectedResponse" xml:space="preserve"><value>Die API hat eine unerwartete Antwort geliefert.</value></data>
+  <data name="Api_EmptyResponse" xml:space="preserve"><value>Die API hat eine leere Antwort geliefert.</value></data>
+  <data name="Download_HashMismatch" xml:space="preserve"><value>Die heruntergeladene Datei ist beschädigt oder wurde verändert (SHA-256 stimmt nicht). Sie wurde gelöscht; bitte versuche es erneut.</value></data>
+  <data name="Download_HttpFailed" xml:space="preserve"><value>Download fehlgeschlagen: HTTP {0} {1}</value></data>
+  <data name="Download_DiskSpace" xml:space="preserve"><value>Nicht genug Speicherplatz: {0} MB benötigt, {1} MB frei auf {2}.</value></data>
+  <data name="Download_DiskError" xml:space="preserve"><value>Datenträgerfehler: {0}</value></data>
+  <data name="Benchmark_Good" xml:space="preserve"><value>Gut für Live-Untertitel</value></data>
+  <data name="Benchmark_Usable" xml:space="preserve"><value>Brauchbar, etwas Verzögerung</value></data>
+  <data name="Benchmark_TooSlow" xml:space="preserve"><value>Zu langsam: kleineres Modell oder API-Modus verwenden</value></data>
+  <data name="Advice_Gpu" xml:space="preserve"><value>Eigene Grafikkarte mit {0} GB VRAM ({1}): Das Turbo-Modell läuft flüssig in Echtzeit.</value></data>
+  <data name="Advice_CpuSmall" xml:space="preserve"><value>Keine geeignete Grafikkarte, aber {0} CPU-Kerne: Das Small-Modell sollte mithalten.</value></data>
+  <data name="Advice_CpuBase" xml:space="preserve"><value>{0} CPU-Kerne und keine geeignete Grafikkarte: Base-Modell verwenden oder für bessere Qualität den API-Modus.</value></data>
+  <data name="Advice_Limited" xml:space="preserve"><value>Schwache Hardware: Der API-Modus wird empfohlen; das Tiny-Modell funktioniert, aber mit geringer Qualität.</value></data>
+  <data name="Hardware_Summary" xml:space="preserve"><value>CPU: {0} Kerne / {1} Threads, RAM: {2:F1} GB, GPU: {3}</value></data>
+  <data name="Hardware_NoGpu" xml:space="preserve"><value>keine erkannt</value></data>
+</root>

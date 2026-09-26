@@ -89,7 +89,7 @@ public sealed class LocalWhisperTranscriber : ITranscriber
         {
             if (!File.Exists(options.ModelPath))
             {
-                throw new TranscriptionException($"Model file not found: {options.ModelPath}") { IsFatal = true };
+                throw new TranscriptionException(Loc.Format("Whisper_ModelNotFound", options.ModelPath)) { IsFatal = true };
             }
 
             if (!HasGgmlMagic(options.ModelPath))
@@ -108,9 +108,7 @@ public sealed class LocalWhisperTranscriber : ITranscriber
             catch (Exception ex) when (ex is FileNotFoundException or DllNotFoundException or BadImageFormatException)
             {
                 // The model file exists (checked above), so this is the native whisper.cpp library itself.
-                throw new TranscriptionException(
-                    "The Whisper runtime (native libraries in the 'runtimes' folder next to the app) could not be loaded. " +
-                    "Re-extract the full CaptionOverlay zip.", ex) { IsFatal = true };
+                throw new TranscriptionException(Loc.Get("Whisper_RuntimeMissing"), ex) { IsFatal = true };
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -194,9 +192,7 @@ public sealed class LocalWhisperTranscriber : ITranscriber
         }
     }
 
-    private const string InvalidModelMessage =
-        "This file could not be loaded as a Whisper GGML model. Pick a whisper.cpp 'ggml-*.bin' file " +
-        "(Transformers .safetensors/.pt files are not supported).";
+    private static string InvalidModelMessage => Loc.Get("Whisper_InvalidModel");
 
     /// <summary>whisper.cpp model files start with the uint32 magic 0x67676d6c ("ggml").</summary>
     private static bool HasGgmlMagic(string path)

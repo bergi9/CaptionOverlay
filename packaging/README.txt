@@ -32,6 +32,7 @@ Everyday use
 - Ctrl+Alt+P  pause / resume captions
 - Ctrl+Alt+X  clear the overlay
 - Transcripts (.srt and .txt) are saved to Documents\CaptionOverlay (can be turned off).
+- Language (English / German, follows Windows) and light/dark mode: Settings -> General.
 
 Known limitation: the overlay cannot appear above games running in *exclusive* fullscreen.
 Use borderless or windowed fullscreen instead.

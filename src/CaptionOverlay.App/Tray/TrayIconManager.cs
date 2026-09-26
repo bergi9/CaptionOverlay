@@ -54,22 +54,22 @@ public sealed class TrayIconManager : IDisposable
         var menu = _icon.ContextMenu!;
         menu.Items.Clear();
 
-        menu.Items.Add(Item(_app.IsListening ? "Stop listening" : "Start listening", async () => await _app.ToggleListeningAsync(), bold: true));
-        var pause = Item("Pause captions", _app.TogglePause);
+        menu.Items.Add(Item(Loc.Get(_app.IsListening ? "Tray_StopListening" : "Tray_StartListening"), async () => await _app.ToggleListeningAsync(), bold: true));
+        var pause = Item(Loc.Get("Tray_Pause"), _app.TogglePause);
         pause.IsCheckable = true;
         pause.IsChecked = _app.IsPaused;
         pause.IsEnabled = _app.IsListening;
         menu.Items.Add(pause);
-        menu.Items.Add(Item("Edit overlay position", _app.ToggleEditMode));
-        menu.Items.Add(Item("Clear overlay", _app.ClearOverlay));
+        menu.Items.Add(Item(Loc.Get("Tray_EditOverlay"), _app.ToggleEditMode));
+        menu.Items.Add(Item(Loc.Get("Tray_ClearOverlay"), _app.ClearOverlay));
         menu.Items.Add(new Separator());
         menu.Items.Add(BuildEngineMenu());
         menu.Items.Add(new Separator());
-        menu.Items.Add(Item("Copy transcript", _app.CopyTranscript));
-        menu.Items.Add(Item("Open transcripts folder", _app.OpenTranscriptsFolder));
+        menu.Items.Add(Item(Loc.Get("Tray_CopyTranscript"), _app.CopyTranscript));
+        menu.Items.Add(Item(Loc.Get("Tray_OpenTranscripts"), _app.OpenTranscriptsFolder));
         menu.Items.Add(new Separator());
-        menu.Items.Add(Item("Settings…", () => _app.ShowSettings()));
-        menu.Items.Add(Item("Quit", async () => await _app.QuitAsync()));
+        menu.Items.Add(Item(Loc.Get("Tray_Settings"), () => _app.ShowSettings()));
+        menu.Items.Add(Item(Loc.Get("Tray_Quit"), async () => await _app.QuitAsync()));
     }
 
     private MenuItem BuildEngineMenu()
@@ -77,28 +77,28 @@ public sealed class TrayIconManager : IDisposable
         var engine = _app.Settings.Engine;
         var installed = _app.ModelStore.GetInstalled(_app.Catalog);
         string current = engine.Mode == EngineMode.Api
-            ? $"API – {CaptionOverlay.Core.Transcription.ApiProviderPreset.Find(_app.Settings.Api.Provider).Name}"
-            : $"Local – {installed.FirstOrDefault(m => m.Id == engine.ModelId)?.DisplayName ?? "no model"}";
-        var root = new MenuItem { Header = $"Engine: {current}" };
+            ? Loc.Format("Tray_Api", CaptionOverlay.Core.Transcription.ApiProviderPreset.Find(_app.Settings.Api.Provider).Name)
+            : Loc.Format("Tray_Local", installed.FirstOrDefault(m => m.Id == engine.ModelId)?.DisplayName ?? Loc.Get("Tray_NoModel"));
+        var root = new MenuItem { Header = Loc.Format("Tray_Engine", current) };
 
         foreach (var model in installed)
         {
-            var item = Item($"Local – {model.DisplayName}", () => _app.SwitchEngine(EngineMode.Local, model.Id));
+            var item = Item(Loc.Format("Tray_Local", model.DisplayName), () => _app.SwitchEngine(EngineMode.Local, model.Id));
             item.IsCheckable = true;
             item.IsChecked = engine.Mode == EngineMode.Local && engine.ModelId == model.Id;
             root.Items.Add(item);
         }
         if (installed.Count == 0)
         {
-            root.Items.Add(new MenuItem { Header = "No local models downloaded", IsEnabled = false });
+            root.Items.Add(new MenuItem { Header = Loc.Get("Tray_NoLocalModels"), IsEnabled = false });
         }
         root.Items.Add(new Separator());
-        var api = Item($"API – {CaptionOverlay.Core.Transcription.ApiProviderPreset.Find(_app.Settings.Api.Provider).Name}", () => _app.SwitchEngine(EngineMode.Api));
+        var api = Item(Loc.Format("Tray_Api", CaptionOverlay.Core.Transcription.ApiProviderPreset.Find(_app.Settings.Api.Provider).Name), () => _app.SwitchEngine(EngineMode.Api));
         api.IsCheckable = true;
         api.IsChecked = engine.Mode == EngineMode.Api;
         root.Items.Add(api);
         root.Items.Add(new Separator());
-        root.Items.Add(Item("Manage models…", () => _app.ShowSettings("Models")));
+        root.Items.Add(Item(Loc.Get("Tray_ManageModels"), () => _app.ShowSettings("Models")));
         return root;
     }
 

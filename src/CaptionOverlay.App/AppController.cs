@@ -51,6 +51,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
     private FirstRunWindow? _firstRunWindow;
     private TranscriptSession? _transcript;
     private bool _quitting;
+    private bool _startError;
     private (string? Language, bool Partials, EngineMode Mode) _runningEngineParams;
 
     public AppController(ILoggerFactory loggers)
@@ -97,7 +98,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
     public ILoggerFactory Loggers => _loggers;
 
     [ObservableProperty]
-    public partial string StatusText { get; private set; } = "Idle";
+    public partial string StatusText { get; private set; } = "";
 
     [ObservableProperty]
     public partial bool IsListening { get; private set; }
@@ -110,6 +111,9 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
 
     public async Task InitializeAsync(bool autostart)
     {
+        ApplyAppearance();
+        Loc.CultureChanged += OnCultureChanged;
+        StatusText = Loc.Get("Status_NotListening");
         _overlay = new OverlayWindow(OverlayViewModel, Settings.Overlay);
         _overlay.PlacementChanged += ScheduleSave;
         OverlayViewModel.StyleEdited += ScheduleSave;
@@ -151,6 +155,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         try
         {
             var config = BuildPipelineConfig();
+            _startError = false;
             await Pipeline.StartAsync(config, BuildTranscriberFactory());
             StartTranscriptSession();
             IsListening = true;
@@ -159,7 +164,8 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Could not start listening");
-            StatusText = ex is TranscriptionException or InvalidOperationException ? ex.Message : $"Could not start: {ex.Message}";
+            StatusText = ex is TranscriptionException or InvalidOperationException ? ex.Message : Loc.Format("Status_CouldNotStart", ex.Message);
+            _startError = true;
             _tray?.Notify("CaptionOverlay", StatusText);
             IsListening = false;
         }
@@ -259,6 +265,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
                 }
                 break;
             case SettingsSection.General:
+                ApplyAppearance();
                 try
                 {
                     if (Settings.General.StartWithWindows != StartupRegistration.IsRegistered || StartupRegistration.IsStale)
@@ -330,7 +337,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Switching transcriber failed");
-            _tray?.Notify("Could not switch engine", ex.Message);
+            _tray?.Notify(Loc.Get("Notify_EngineSwitchFailed"), ex.Message);
         }
         finally
         {
@@ -399,7 +406,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         }
 
         var model = ModelStore.Resolve(engine.ModelId, Catalog)
-            ?? throw new InvalidOperationException("No Whisper model selected or it is not downloaded. Open Settings → Models.");
+            ?? throw new InvalidOperationException(Loc.Get("Status_NoModel"));
         var partialModel = engine.PartialModelId is { } pid && pid != engine.ModelId ? ModelStore.Resolve(pid, Catalog) : null;
         var gpu = engine.Gpu;
         return async ct =>
@@ -489,7 +496,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         {
             _transcript?.Dispose();
             _transcript = null;
-            _tray?.Notify("CaptionOverlay stopped", status.Message ?? "Error");
+            _tray?.Notify(Loc.Get("Notify_Stopped"), status.Message ?? Loc.Get("Common_Error"));
         }
         UpdateStatusText();
     }
@@ -501,23 +508,46 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         string engine = Pipeline.TranscriberName is { } name ? $" · {name}" : "";
         string text = status.State switch
         {
-            PipelineState.Idle => "Not listening",
-            PipelineState.LoadingModel => "Loading model…",
-            PipelineState.Paused => "Captions paused",
-            PipelineState.Error => $"Error: {status.Message}",
-            _ => $"Listening ({metrics.Runtime ?? status.Message}){engine}",
+            PipelineState.Idle => Loc.Get("Status_NotListening"),
+            PipelineState.LoadingModel => Loc.Get("Pipeline_LoadingModel"),
+            PipelineState.Paused => Loc.Get("Pipeline_Paused"),
+            PipelineState.Error => Loc.Format("Status_Error", status.Message),
+            _ => Loc.Format("Status_Listening", metrics.Runtime ?? status.Message, engine),
         };
         if (status.State is PipelineState.Listening or PipelineState.Transcribing && metrics.IsLagging)
         {
-            text = $"Lagging {metrics.LagSeconds:F0} s — consider a smaller model or API mode";
+            text = Loc.Format("Status_Lagging", metrics.LagSeconds);
         }
-        if (status.State == PipelineState.Idle && StatusText.StartsWith("Could not", StringComparison.Ordinal))
+        if (status.State == PipelineState.Idle && _startError)
         {
             return; // keep the start error visible
         }
         StatusText = text;
         OverlayViewModel.StatusText = text;
         _tray?.SetToolTip($"CaptionOverlay — {text}");
+    }
+
+    // ───────────────────────────── Language / theme ─────────────────────────────
+
+    /// <summary>Applies the UI language and light/dark theme from the settings (both switch live).</summary>
+    private void ApplyAppearance()
+    {
+        Loc.SetLanguage(Settings.General.UiLanguage);
+        ThemeService.Apply(Settings.General.Theme);
+    }
+
+    /// <summary>Re-creates the texts built in code; XAML text and the tray menu (rebuilt on open) follow by themselves.</summary>
+    private void OnCultureChanged()
+    {
+        if (HotkeyErrors is not null)
+        {
+            RegisterHotkeys(notify: false);
+        }
+        if (StartupEntryWarning is not null)
+        {
+            StartupEntryWarning = Loc.Get("General_StartupEntryStale");
+        }
+        UpdateStatusText();
     }
 
     // ───────────────────────────── Windows / misc ─────────────────────────────
@@ -592,7 +622,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         }
     }
 
-    public void RegisterHotkeys()
+    public void RegisterHotkeys(bool notify = true)
     {
         if (_hotkeys is null)
         {
@@ -606,9 +636,9 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
             _hotkeys.Register(Settings.Hotkeys.ClearOverlay, ClearOverlay),
         }.Where(e => e is not null).ToList();
         HotkeyErrors = errors.Count == 0 ? null : string.Join(Environment.NewLine, errors);
-        if (HotkeyErrors is not null)
+        if (HotkeyErrors is not null && notify)
         {
-            _tray?.Notify("Hotkey not available", HotkeyErrors);
+            _tray?.Notify(Loc.Get("Notify_HotkeyUnavailable"), HotkeyErrors);
         }
     }
 
@@ -624,8 +654,8 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         {
             if (Settings.General.StartWithWindows && StartupRegistration.IsStale)
             {
-                StartupEntryWarning = "“Start with Windows” points to an older copy of CaptionOverlay. Open Settings → General to fix it.";
-                _tray?.Notify("Start with Windows", StartupEntryWarning);
+                StartupEntryWarning = Loc.Get("General_StartupEntryStale");
+                _tray?.Notify(Loc.Get("General_StartWithWindows"), StartupEntryWarning);
             }
         }
         catch (Exception ex)
@@ -659,7 +689,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         AvailableUpdate = update;
         if (update is not null)
         {
-            _tray?.Notify("Update available", $"CaptionOverlay {update.Tag} is available on GitHub Releases.", () => OpenUrl(update.Url));
+            _tray?.Notify(Loc.Get("Notify_UpdateTitle"), Loc.Format("Notify_UpdateText", update.Tag), () => OpenUrl(update.Url));
         }
     }
 
@@ -677,6 +707,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        Loc.CultureChanged -= OnCultureChanged;
         _metricsTimer.Stop();
         Downloader.Dispose();
         await Pipeline.DisposeAsync();

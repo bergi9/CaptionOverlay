@@ -105,7 +105,7 @@ public sealed class HotkeyService : IDisposable
         var hotkey = Hotkey.Parse(text);
         if (hotkey is null)
         {
-            return $"'{text}' is not a valid hotkey (use e.g. Ctrl+Alt+C).";
+            return Loc.Format("Hotkeys_Invalid", text);
         }
         uint mods = NativeMethods.MOD_NOREPEAT;
         if (hotkey.Modifiers.HasFlag(ModifierKeys.Control))
@@ -130,7 +130,7 @@ public sealed class HotkeyService : IDisposable
         if (!NativeMethods.RegisterHotKey(_window.Handle, id, mods, vk))
         {
             _logger.LogWarning("Hotkey {Hotkey} could not be registered (already in use?)", hotkey);
-            return $"{hotkey} is already used by another application.";
+            return Loc.Format("Hotkeys_Taken", hotkey);
         }
         _handlers[id] = handler;
         _logger.LogInformation("Registered hotkey {Hotkey}", hotkey);

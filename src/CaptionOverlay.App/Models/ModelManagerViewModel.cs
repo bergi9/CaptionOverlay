@@ -30,10 +30,11 @@ public sealed partial class ModelItemViewModel : ObservableObject
     public string Name => Entry?.DisplayName ?? Custom!.DisplayName;
 
     public string Details => Entry is { } e
-        ? $"{FormatSize(e.SizeBytes)} · {(e.IsMultilingual ? "multilingual" : string.Join(", ", e.Languages))} · license: {e.License ?? "unknown"}"
-        : $"Custom file · {Custom!.Path}{(Custom.ForceLanguage is { } l ? $" · language: {l}" : "")}";
+        ? Loc.Format("Models_Details", FormatSize(e.SizeBytes), e.IsMultilingual ? Loc.Get("Models_Multilingual") : string.Join(", ", e.Languages), e.License ?? Loc.Get("Models_UnknownLicense"))
+        : Custom!.ForceLanguage is { } l ? Loc.Format("Models_CustomDetailsLanguage", Custom.Path, l) : Loc.Format("Models_CustomDetails", Custom.Path);
 
-    public string? Notes => Entry?.Notes;
+    /// <summary>Catalog note; translations are keyed by model id ("ModelNote_" + id) and fall back to the catalog text.</summary>
+    public string? Notes => Entry is null ? null : Loc.TryGet("ModelNote_" + Entry.Id) ?? Entry.Notes;
 
     public bool IsCustom => Custom is not null;
 
@@ -68,7 +69,7 @@ public sealed partial class ModelItemViewModel : ObservableObject
 
     public bool CanUse => IsInstalled;
 
-    public string DownloadLabel => HasPartial ? "Resume" : "Download";
+    public string DownloadLabel => Loc.Get(HasPartial ? "Models_Resume" : "Models_Download");
 
     partial void OnHasPartialChanged(bool value) => OnPropertyChanged(nameof(DownloadLabel));
 
@@ -91,24 +92,22 @@ public sealed partial class ModelItemViewModel : ObservableObject
     private Task Benchmark() => _owner.BenchmarkAsync(this);
 
     internal static string FormatSize(long bytes) =>
-        bytes >= 1_000_000_000 ? $"{bytes / 1e9:F2} GB" : $"{bytes / 1e6:F0} MB";
+        bytes >= 1_000_000_000 ? string.Format(Loc.Culture, "{0:F2} GB", bytes / 1e9) : string.Format(Loc.Culture, "{0:F0} MB", bytes / 1e6);
 }
 
 /// <summary>Models tab: catalog + custom models, downloads, hardware hint, benchmark.</summary>
 public sealed partial class ModelManagerViewModel : ObservableObject, IDisposable
 {
     private readonly AppController _app;
+    private readonly HardwareSummary _hardware;
 
     public ModelManagerViewModel(AppController app)
     {
         _app = app;
         Downloader.ProgressChanged += OnProgress;
         _app.CatalogChanged += OnCatalogChanged;
-        var hw = HardwareInfo.Query();
-        HardwareText = hw.ToString();
-        var rec = ModelAdvisor.Recommend(hw, app.Settings.Engine.Language);
-        RecommendedId = rec.ModelId;
-        RecommendationText = $"Recommended: {app.Catalog.Find(rec.ModelId)?.DisplayName ?? rec.ModelId}{(rec.SuggestApi ? " — or API mode" : "")}. {rec.Reason}";
+        _hardware = HardwareInfo.Query();
+        RecommendedId = ModelAdvisor.Recommend(_hardware, app.Settings.Engine.Language).ModelId;
         Rebuild();
     }
 
@@ -116,9 +115,17 @@ public sealed partial class ModelManagerViewModel : ObservableObject, IDisposabl
 
     public ObservableCollection<ModelItemViewModel> Items { get; } = [];
 
-    public string HardwareText { get; }
+    public string HardwareText => _hardware.Describe();
 
-    public string RecommendationText { get; }
+    public string RecommendationText
+    {
+        get
+        {
+            var rec = ModelAdvisor.Recommend(_hardware, _app.Settings.Engine.Language);
+            string name = _app.Catalog.Find(rec.ModelId)?.DisplayName ?? rec.ModelId ?? "";
+            return Loc.Format(rec.SuggestApi ? "Models_RecommendedOrApi" : "Models_RecommendedModel", name, rec.Reason);
+        }
+    }
 
     public string? RecommendedId { get; }
 
@@ -134,8 +141,11 @@ public sealed partial class ModelManagerViewModel : ObservableObject, IDisposabl
     /// <summary>Raised when the set of installed models changed (engine model list must refresh).</summary>
     public event Action? InstalledChanged;
 
+    /// <summary>Recreates the rows (also after a UI language change, so every text is re-translated).</summary>
     public void Rebuild()
     {
+        OnPropertyChanged(nameof(HardwareText));
+        OnPropertyChanged(nameof(RecommendationText));
         Items.Clear();
         foreach (var entry in _app.Catalog.Models)
         {
@@ -165,10 +175,10 @@ public sealed partial class ModelManagerViewModel : ObservableObject, IDisposabl
     {
         if (item.IsActive && _app.IsListening && _app.Settings.Engine.Mode == EngineMode.Local)
         {
-            Message = "This model is in use. Switch to another model (or stop listening) before deleting it.";
+            Message = Loc.Get("Models_InUseCannotDelete");
             return;
         }
-        string what = item.IsCustom ? "Remove this custom model from the list? (The file itself is not deleted.)" : $"Delete {item.Name} from disk?";
+        string what = item.IsCustom ? Loc.Get("Models_ConfirmRemoveCustom") : Loc.Format("Models_ConfirmDelete", item.Name);
         if (MessageBox.Show(what, "CaptionOverlay", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
         {
             return;
@@ -205,18 +215,18 @@ public sealed partial class ModelManagerViewModel : ObservableObject, IDisposabl
             return;
         }
         item.IsBusy = true;
-        item.BenchmarkText = "Benchmarking…";
+        item.BenchmarkText = Loc.Get("Models_Benchmarking");
         try
         {
             await using var transcriber = await LocalWhisperTranscriber.LoadAsync(
                 new LocalWhisperOptions { ModelPath = model.Path, DisplayName = model.DisplayName },
                 _app.Settings.Engine.Gpu, null);
             var result = await ModelAdvisor.BenchmarkAsync(transcriber);
-            item.BenchmarkText = $"RTF {result.RealTimeFactor:F2} on {result.Runtime}: {result.RatingText}";
+            item.BenchmarkText = Loc.Format("Models_BenchmarkResult", result.RealTimeFactor, result.Runtime, result.RatingText);
         }
         catch (Exception ex)
         {
-            item.BenchmarkText = $"Benchmark failed: {ex.Message}";
+            item.BenchmarkText = Loc.Format("Common_BenchmarkFailed", ex.Message);
         }
         finally
         {
@@ -229,8 +239,8 @@ public sealed partial class ModelManagerViewModel : ObservableObject, IDisposabl
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Choose a whisper.cpp GGML model",
-            Filter = "Whisper GGML model (*.bin)|*.bin|All files (*.*)|*.*",
+            Title = Loc.Get("Models_ChooseFileTitle"),
+            Filter = Loc.Get("Models_ChooseFileFilter"),
         };
         if (dialog.ShowDialog() != true)
         {
@@ -239,10 +249,10 @@ public sealed partial class ModelManagerViewModel : ObservableObject, IDisposabl
         string language = CustomLanguage.Trim().ToLowerInvariant();
         if (language.Length > 0 && (language.Length is < 2 or > 3 || !language.All(char.IsAsciiLetterLower)))
         {
-            Message = "Forced language must be an ISO code like \"de\" (or empty).";
+            Message = Loc.Get("Models_InvalidLanguage");
             return;
         }
-        Message = "Checking model file…";
+        Message = Loc.Get("Models_Checking");
         try
         {
             await LocalWhisperTranscriber.ValidateModelAsync(dialog.FileName, _app.Settings.Engine.Gpu);
@@ -259,7 +269,7 @@ public sealed partial class ModelManagerViewModel : ObservableObject, IDisposabl
         RefreshState(item);
         CustomName = "";
         CustomLanguage = "";
-        Message = $"Added {name}.";
+        Message = Loc.Format("Models_Added", name);
         InstalledChanged?.Invoke();
     }
 
@@ -281,15 +291,15 @@ public sealed partial class ModelManagerViewModel : ObservableObject, IDisposabl
             {
                 item.IsBusy = false;
                 item.Progress = item.IsInstalled ? 1 : (double)partial / entry.SizeBytes;
-                item.StateText = item.IsInstalled ? "Installed"
-                    : partial > 0 ? $"Paused at {item.Progress:P0}"
-                    : state?.State == DownloadState.Failed ? state.Error ?? "Failed" : "";
+                item.StateText = item.IsInstalled ? Loc.Get("Models_Installed")
+                    : partial > 0 ? Loc.Format("Models_PausedAt", item.Progress)
+                    : state?.State == DownloadState.Failed ? state.Error ?? Loc.Get("Models_Failed") : "";
             }
         }
         else
         {
             item.IsInstalled = System.IO.File.Exists(item.Custom!.Path);
-            item.StateText = item.IsInstalled ? "Available" : "File missing";
+            item.StateText = Loc.Get(item.IsInstalled ? "Models_Available" : "Models_FileMissing");
         }
     }
 
@@ -306,7 +316,7 @@ public sealed partial class ModelManagerViewModel : ObservableObject, IDisposabl
             RefreshState(item);
             if (p.State == DownloadState.Failed)
             {
-                item.StateText = p.Error ?? "Failed";
+                item.StateText = p.Error ?? Loc.Get("Models_Failed");
             }
             if (p.State == DownloadState.Completed)
             {
@@ -325,13 +335,15 @@ public sealed partial class ModelManagerViewModel : ObservableObject, IDisposabl
         item.Progress = p.Fraction;
         item.StateText = p.State switch
         {
-            DownloadState.Queued => "Queued…",
-            DownloadState.Downloading => $"{p.Fraction:P0} · {p.BytesPerSecond / 1e6:F1} MB/s · {(p.Eta is { } eta ? $"{(int)eta.TotalMinutes}:{eta.Seconds:00} left" : "")}",
-            DownloadState.Verifying => "Verifying (SHA-256)…",
-            DownloadState.Completed => "Installed",
-            DownloadState.Paused => $"Paused at {p.Fraction:P0}",
+            DownloadState.Queued => Loc.Get("Models_Queued"),
+            DownloadState.Downloading => p.Eta is { } eta
+                ? Loc.Format("Models_DownloadingEta", p.Fraction, p.BytesPerSecond / 1e6, $"{(int)eta.TotalMinutes}:{eta.Seconds:00}")
+                : Loc.Format("Models_Downloading", p.Fraction, p.BytesPerSecond / 1e6),
+            DownloadState.Verifying => Loc.Get("Models_Verifying"),
+            DownloadState.Completed => Loc.Get("Models_Installed"),
+            DownloadState.Paused => Loc.Format("Models_PausedAt", p.Fraction),
             DownloadState.Canceled => "",
-            DownloadState.Failed => p.Error ?? "Failed",
+            DownloadState.Failed => p.Error ?? Loc.Get("Models_Failed"),
             _ => "",
         };
     }

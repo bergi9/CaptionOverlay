@@ -57,6 +57,15 @@ public sealed class AppSettings
             Audio.MaxUtteranceSec = defaults.Audio.MaxUtteranceSec;
         }
 
+        if (string.IsNullOrWhiteSpace(General.UiLanguage))
+        {
+            General.UiLanguage = defaults.General.UiLanguage;
+        }
+        if (!Enum.IsDefined(General.Theme))
+        {
+            General.Theme = defaults.General.Theme;
+        }
+
         if (string.IsNullOrWhiteSpace(Engine.Language))
         {
             Engine.Language = defaults.Engine.Language;
@@ -230,4 +239,18 @@ public sealed class GeneralSettings
 
     /// <summary>Debug only: include transcript text in logs.</summary>
     public bool LogTranscriptText { get; set; }
+
+    /// <summary>UI language: "system" (Windows display language, English if untranslated), "en" or "de".</summary>
+    public string UiLanguage { get; set; } = Loc.SystemLanguage;
+
+    public AppTheme Theme { get; set; } = AppTheme.System;
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<AppTheme>))]
+public enum AppTheme
+{
+    /// <summary>Follow the Windows light/dark app mode.</summary>
+    System,
+    Light,
+    Dark,
 }

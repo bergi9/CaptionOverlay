@@ -54,6 +54,7 @@ public class LiveApiTests
             ApiKey = key ?? c.Key,
             ProviderName = c.Preset.Name,
             Language = language,
+            StreamingDelay = Environment.GetEnvironmentVariable("CAPTIONOVERLAY_TEST_API_DELAY"),
         }, ct: Ct);
 
     [Fact]

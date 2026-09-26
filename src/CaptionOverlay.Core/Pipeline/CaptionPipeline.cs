@@ -21,6 +21,7 @@ public sealed class CaptionPipeline : IAsyncDisposable
     private readonly HallucinationFilter _filter;
     private readonly SemaphoreSlim _lifecycle = new(1, 1);
     private readonly Stopwatch _session = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<Guid, TimeSpan> _finalQueuedAt = new();
 
     private PipelineConfig? _config;
     private CancellationTokenSource? _cts;
@@ -422,6 +423,7 @@ public sealed class CaptionPipeline : IAsyncDisposable
                     Captions.Discard(final.UtteranceId);
                     break;
                 }
+                _finalQueuedAt[final.UtteranceId] = _session.Elapsed;
                 scheduler.EnqueueFinal(final);
                 break;
             case UtteranceDiscarded discarded:
@@ -431,8 +433,27 @@ public sealed class CaptionPipeline : IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// How long after the end of the utterance its line is committed (italic → normal in the overlay), split into the
+    /// segmenter's wait for end-of-speech silence, waiting in the queue and the transcription itself. Meaningful for
+    /// live and real-time sources, where the session clock runs with the audio.
+    /// </summary>
+    private void LogCommitLatency(FinalUtterance final, TranscriptionResult result)
+    {
+        var now = _session.Elapsed;
+        if (!_finalQueuedAt.TryRemove(final.UtteranceId, out var queued))
+        {
+            return;
+        }
+        _logger.LogInformation(
+            "Commit latency {Id}: {Total} ms after the utterance end (end-of-speech wait {Segmenter} ms, queue {Queue} ms, transcription {Transcription} ms)",
+            final.UtteranceId.ToString()[..8], (int)(now - final.End).TotalMilliseconds, (int)(queued - final.End).TotalMilliseconds,
+            (int)(now - queued - result.InferenceTime).TotalMilliseconds, (int)result.InferenceTime.TotalMilliseconds);
+    }
+
     private void OnFinalCompleted(FinalUtterance final, TranscriptionResult result)
     {
+        LogCommitLatency(final, result);
         var verdict = _filter.Apply(new FilterInput(
             result.Text,
             result.DetectedLanguage,

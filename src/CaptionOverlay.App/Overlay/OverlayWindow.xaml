@@ -26,9 +26,6 @@
             <Setter Property="BorderBrush" Value="#66FFFFFF" />
             <Setter Property="Focusable" Value="False" />
         </Style>
-        <Storyboard x:Key="FadeIn">
-            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.25" />
-        </Storyboard>
     </Window.Resources>
 
     <Grid x:Name="Root" VerticalAlignment="Bottom">
@@ -84,40 +81,48 @@
                     </Style>
                 </Border.Style>
                 <StackPanel>
+                    <!-- Committed lines and the in-progress (tentative) line, which becomes committed in place.
+                         RevealDecorator animates lines in and out so the text scrolls instead of jumping. -->
                     <ItemsControl ItemsSource="{Binding Lines}">
                         <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <local:OutlinedTextBlock Text="{Binding Text}"
-                                                         FontFamily="{Binding DataContext.FontFamily, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                         FontSize="{Binding DataContext.FontSize, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                         FontWeight="{Binding DataContext.FontWeight, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                         Fill="{Binding DataContext.TextBrush, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                         Stroke="{Binding DataContext.OutlineBrush, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                         StrokeThickness="{Binding DataContext.OutlineThickness, RelativeSource={RelativeSource AncestorType=Window}}">
-                                    <local:OutlinedTextBlock.Triggers>
-                                        <EventTrigger RoutedEvent="Loaded">
-                                            <BeginStoryboard Storyboard="{StaticResource FadeIn}" />
-                                        </EventTrigger>
-                                    </local:OutlinedTextBlock.Triggers>
-                                </local:OutlinedTextBlock>
+                            <DataTemplate DataType="{x:Type local:CaptionLineViewModel}">
+                                <local:RevealDecorator IsShown="{Binding IsShown}">
+                                    <local:OutlinedTextBlock Text="{Binding Text}"
+                                                             FontFamily="{Binding DataContext.FontFamily, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                             FontSize="{Binding DataContext.FontSize, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                             FontWeight="{Binding DataContext.FontWeight, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                             Fill="{Binding DataContext.TextBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                             Stroke="{Binding DataContext.OutlineBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                             StrokeThickness="{Binding DataContext.OutlineThickness, RelativeSource={RelativeSource AncestorType=Window}}">
+                                        <local:OutlinedTextBlock.Style>
+                                            <Style TargetType="local:OutlinedTextBlock">
+                                                <Style.Triggers>
+                                                    <!-- In progress: italic and dimmed; on commit the same line brightens smoothly. -->
+                                                    <DataTrigger Binding="{Binding IsTentative}" Value="True">
+                                                        <Setter Property="FontStyle" Value="Italic" />
+                                                        <DataTrigger.EnterActions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0.72" Duration="0:0:0" />
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </DataTrigger.EnterActions>
+                                                        <DataTrigger.ExitActions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.3" />
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </DataTrigger.ExitActions>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </local:OutlinedTextBlock.Style>
+                                    </local:OutlinedTextBlock>
+                                </local:RevealDecorator>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-
-                    <!-- Tentative (in-progress) line: dimmed and italic -->
-                    <local:OutlinedTextBlock Text="{Binding TentativeText}" FontStyle="Italic" Opacity="0.72"
-                                             FontFamily="{Binding FontFamily}" FontSize="{Binding FontSize}" FontWeight="{Binding FontWeight}"
-                                             Fill="{Binding TextBrush}" Stroke="{Binding OutlineBrush}" StrokeThickness="{Binding OutlineThickness}">
-                        <local:OutlinedTextBlock.Style>
-                            <Style TargetType="local:OutlinedTextBlock">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding TentativeText}" Value="{x:Null}">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </local:OutlinedTextBlock.Style>
-                    </local:OutlinedTextBlock>
 
                     <!-- Edit-mode placeholder -->
                     <StackPanel Visibility="{Binding ShowPlaceholder, Converter={StaticResource BoolToVis}}">

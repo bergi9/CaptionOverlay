@@ -376,7 +376,8 @@ public sealed class TranscriptionScheduler : IAsyncDisposable
     }
 
     private TranscriptionOptions Options(SegmenterEvent job) =>
-        new(Language, PromptProvider?.Invoke(), job is PartialSnapshot, job.UtteranceId, job is FinalUtterance { IsForcedCut: true });
+        new(Language, PromptProvider?.Invoke(), job is PartialSnapshot, job.UtteranceId, job is FinalUtterance { IsForcedCut: true },
+            (job as PartialSnapshot)?.StableSamples);
 
     private void MarkBusyLocked()
     {

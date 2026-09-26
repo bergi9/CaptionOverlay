@@ -233,6 +233,7 @@ Details stehen im Protokollordner.</value></data>
   <data name="Overlay_Behaviour" xml:space="preserve"><value>Verhalten</value></data>
   <data name="Overlay_LinesShown" xml:space="preserve"><value>Angezeigte Zeilen: {0:F0}</value></data>
   <data name="Overlay_FadeTimeout" xml:space="preserve"><value>Nach {0:F0} s ohne Sprache ausblenden (0 = nie)</value></data>
+  <data name="Overlay_AnimateLines" xml:space="preserve"><value>Zeilenwechsel animieren (neue Zeilen gleiten herein, alte scrollen hinaus)</value></data>
   <data name="Overlay_FullscreenHint" xml:space="preserve"><value>Über Spielen im exklusiven Vollbildmodus kann das Overlay nicht erscheinen. Verwende randloses Fenster oder Fenstermodus.</value></data>
 
   <!-- Hotkeys -->

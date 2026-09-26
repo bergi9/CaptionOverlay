@@ -4,7 +4,14 @@ public abstract record SegmenterEvent(Guid UtteranceId);
 
 /// <summary>Snapshot of the whole in-progress utterance, for a tentative transcription.</summary>
 public sealed record PartialSnapshot(Guid UtteranceId, float[] Samples, TimeSpan StartOffset, int Sequence)
-    : SegmenterEvent(UtteranceId);
+    : SegmenterEvent(UtteranceId)
+{
+    /// <summary>
+    /// Leading samples that stay in this utterance whatever happens next: a forced cut only lands in the last
+    /// <see cref="SegmenterOptions.CutSearchMs"/> before the length limit. Streaming transcribers upload only these.
+    /// </summary>
+    public int StableSamples { get; init; } = Samples.Length;
+}
 
 /// <summary>A finished utterance. Never dropped downstream.</summary>
 public sealed record FinalUtterance(Guid UtteranceId, float[] Samples, TimeSpan StartOffset, TimeSpan Duration)

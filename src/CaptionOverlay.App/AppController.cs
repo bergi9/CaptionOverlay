@@ -368,7 +368,10 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         bool api = Settings.Engine.Mode == EngineMode.Api;
         return new PipelineConfig
         {
-            AudioSourceFactory = () => new WasapiLoopbackSource(audio.DeviceId, _loggers.CreateLogger<WasapiLoopbackSource>()),
+            // Developer switch: caption a WAV file in real time instead of system audio (repeatable overlay checks).
+            AudioSourceFactory = Environment.GetEnvironmentVariable("CAPTIONOVERLAY_DEBUG_AUDIO_FILE") is { Length: > 0 } debugWav && File.Exists(debugWav)
+                ? () => new WavFileAudioSource(debugWav, realtime: true)
+                : () => new WasapiLoopbackSource(audio.DeviceId, _loggers.CreateLogger<WasapiLoopbackSource>()),
             VadFactory = useVad ? () => new SileroVad(vadPath) : null,
             Segmenter = new SegmenterOptions
             {

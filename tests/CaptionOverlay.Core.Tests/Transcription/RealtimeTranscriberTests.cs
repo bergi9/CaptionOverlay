@@ -90,6 +90,22 @@ public sealed class RealtimeTranscriberTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Partials_hold_back_the_unstable_tail_so_a_forced_cut_needs_no_resend()
+    {
+        await using var t = await ConnectAsync();
+        var id = Guid.NewGuid();
+        float[] audio = Tone(3);
+        // Only the first 1.5 s can no longer move to the next utterance.
+        await t.TranscribeAsync(audio, Partial(id) with { StableSamples = 24000 }, Ct);
+        await _server.WaitForAsync(() => _server.Deltas >= 1);
+
+        var final = await t.TranscribeAsync(audio[..32000], Final(id) with { ForcedCut = true }, Ct);
+
+        _server.Clears.Should().Be(0, "nothing beyond the cut was streamed");
+        Ms(final).Should().BeApproximately(2050, 30);
+    }
+
+    [Fact]
     public async Task Forced_cut_shorter_than_the_streamed_audio_is_resent()
     {
         await using var t = await ConnectAsync();

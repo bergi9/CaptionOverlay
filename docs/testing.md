@@ -1,6 +1,6 @@
 # Testing notes
 
-Automated tests: `dotnet test --project tests/CaptionOverlay.Core.Tests` (179 tests; 158 without a model, via
+Automated tests: `dotnet test --project tests/CaptionOverlay.Core.Tests` (181 tests; 160 without a model, via
 `-- --filter-not-trait "Category=RequiresModel"` as in CI). Tests that need a Whisper model use the models installed in
 `%LOCALAPPDATA%\CaptionOverlay\models` (or `CAPTIONOVERLAY_TEST_MODEL` / `CAPTIONOVERLAY_TEST_MODEL_<ID>`) and skip
 themselves when they are absent. `CAPTIONOVERLAY_UPDATE_WER_BASELINE=1` writes the measured German WER to
@@ -45,6 +45,8 @@ Test machine for the ✅ items: Windows 11 Pro 26200, RTX 4090, 16 cores, 3840×
 - ⏳ Borderless game on top; 150 % DPI second monitor; drag between monitors; position after restart (persistence code path runs, not checked across monitors).
 
 ## M5 — Partials
+- ✅ Commit latency logged per line (`Commit latency …`); local vs gpt-live-transcribe compared on recorded YouTube speech, forced-cut resend removed (ADR-021).
+- ✅ Line changes animated (new line grows in, old one scrolls out, tentative line turns final in place); checked with on-screen frame captures while the app captioned a WAV (`CAPTIONOVERLAY_DEBUG_AUDIO_FILE`). ⏳ Watch it on a 150 % display and with the overlay background at 0 %.
 - ✅ Tentative (italic, dimmed) text visible during speech, replaced by the committed line (screenshots during manual run).
 - ✅ Under artificial slowdown partials are dropped, finals never lost (`TranscriptionSchedulerTests`).
 

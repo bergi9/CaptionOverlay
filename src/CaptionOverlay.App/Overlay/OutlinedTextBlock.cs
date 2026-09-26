@@ -22,6 +22,7 @@ public sealed class OutlinedTextBlock : FrameworkElement
 
     private FormattedText? _formatted;
     private Geometry? _geometry;
+    private double _geometryWidth = double.NaN;
 
     public string Text { get => (string)GetValue(TextProperty); set => SetValue(TextProperty, value); }
 
@@ -53,8 +54,14 @@ public sealed class OutlinedTextBlock : FrameworkElement
 
     protected override Size ArrangeOverride(Size finalSize)
     {
-        _formatted = Create(finalSize.Width);
-        _geometry = _formatted.BuildGeometry(new Point(StrokeThickness, StrokeThickness));
+        // Building the outline geometry is the expensive part: reuse it unless the text was re-measured (_geometry
+        // reset) or the width changed. Animated line moves re-arrange every frame.
+        if (_geometry is null || finalSize.Width != _geometryWidth)
+        {
+            _formatted = Create(finalSize.Width);
+            _geometry = _formatted.BuildGeometry(new Point(StrokeThickness, StrokeThickness));
+            _geometryWidth = finalSize.Width;
+        }
         return finalSize;
     }
 

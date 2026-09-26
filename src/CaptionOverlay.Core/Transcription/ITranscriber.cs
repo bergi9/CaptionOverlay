@@ -15,12 +15,14 @@ public interface ITranscriber : IAsyncDisposable
 
 /// <param name="UtteranceId">The segmenter utterance this pass belongs to (partials and the final share it); streaming transcribers use it to continue the same turn.</param>
 /// <param name="ForcedCut">The final ends at a forced cut, so audio after it (possibly already streamed) belongs to the next utterance.</param>
+/// <param name="StableSamples">Partial passes: how many leading samples can no longer move to the next utterance (see <see cref="Segmentation.PartialSnapshot.StableSamples"/>).</param>
 public sealed record TranscriptionOptions(
     string? Language,
     string? Prompt,
     bool IsPartial,
     Guid? UtteranceId = null,
-    bool ForcedCut = false);
+    bool ForcedCut = false,
+    int? StableSamples = null);
 
 /// <summary>A transcriber behind a network API; the connection test is shown in Settings and the wizard.</summary>
 public interface IApiTranscriber : ITranscriber

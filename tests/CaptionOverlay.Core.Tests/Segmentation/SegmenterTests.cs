@@ -102,6 +102,16 @@ public class UtteranceSegmenterTests
     }
 
     [Fact]
+    public void Partial_snapshots_report_the_part_a_forced_cut_cannot_move()
+    {
+        var seg = new UtteranceSegmenter(new SegmenterOptions { MaxUtteranceSec = 12, CutSearchMs = 2000, PartialIntervalMs = 500 });
+        var partials = Feed(seg, ((int)(11.8 * 16000), 0.9f)).OfType<PartialSnapshot>().ToList();
+        partials.Should().NotBeEmpty();
+        partials.Should().OnlyContain(p => p.StableSamples == Math.Min(p.Samples.Length, 10 * 16000));
+        partials[^1].StableSamples.Should().BeLessThan(partials[^1].Samples.Length, "the last 2 s before the limit may still be cut off");
+    }
+
+    [Fact]
     public void Forced_cut_prefers_the_quietest_window()
     {
         var seg = new UtteranceSegmenter(new SegmenterOptions { EmitPartials = false, MaxUtteranceSec = 12 });

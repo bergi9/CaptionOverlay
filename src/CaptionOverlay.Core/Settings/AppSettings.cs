@@ -190,6 +190,9 @@ public sealed class OverlaySettings
     /// <summary>Hide the overlay after this many seconds without new text (0 = never).</summary>
     public double FadeTimeoutSec { get; set; } = 8;
 
+    /// <summary>Slide lines in and out instead of switching instantly (independent of the Windows animation setting).</summary>
+    public bool AnimateLines { get; set; } = true;
+
     /// <summary>Saved positions per monitor device name.</summary>
     public Dictionary<string, OverlayPlacement> Placements { get; set; } = [];
 

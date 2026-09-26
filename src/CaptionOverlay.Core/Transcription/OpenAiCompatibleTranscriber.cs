@@ -26,6 +26,12 @@ public sealed record ApiTranscriberOptions
     /// <summary>Spoken language for streaming sessions (set once per session); null = detect.</summary>
     public string? Language { get; init; }
 
+    /// <summary>
+    /// Streaming latency/accuracy trade-off of gpt-live-transcribe ("minimal", "low", "medium", "high", "xhigh"); null = the
+    /// server default (best accuracy). Other models ignore it.
+    /// </summary>
+    public string? StreamingDelay { get; init; }
+
     /// <summary>Maximum prompt length sent to the API (OpenAI caps prompts at ~224 tokens).</summary>
     public int MaxPromptChars { get; init; } = 200;
 }

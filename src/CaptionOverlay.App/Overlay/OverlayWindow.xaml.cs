@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -25,6 +26,8 @@ public partial class OverlayWindow : Window
     private IntPtr _hwnd;
     private int _bottomPx;
     private bool _heightUpdateQueued;
+    private long _lastContentChange;
+    private DispatcherTimer? _shrinkTimer;
 
     public OverlayWindow(OverlayViewModel vm, OverlaySettings settings)
     {
@@ -35,8 +38,8 @@ public partial class OverlayWindow : Window
         _foregroundHook = (_, _, _, _, _, _, _) => ReassertTopmost();
         _topmostTimer = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) => ReassertTopmost(), Dispatcher);
 
-        vm.PropertyChanged += (_, _) => QueueHeightUpdate();
-        vm.Lines.CollectionChanged += (_, _) => QueueHeightUpdate();
+        vm.PropertyChanged += (_, _) => OnContentChanged();
+        vm.Lines.CollectionChanged += (_, _) => OnContentChanged();
         MouseLeftButtonDown += OnMouseLeftButtonDown;
         DpiChanged += (_, _) => QueueHeightUpdate();
     }
@@ -141,6 +144,12 @@ public partial class OverlayWindow : Window
         }
     }
 
+    private void OnContentChanged()
+    {
+        _lastContentChange = Stopwatch.GetTimestamp();
+        QueueHeightUpdate();
+    }
+
     private void QueueHeightUpdate()
     {
         if (_heightUpdateQueued)
@@ -151,7 +160,11 @@ public partial class OverlayWindow : Window
         Dispatcher.BeginInvoke(DispatcherPriority.Render, UpdateHeight);
     }
 
-    /// <summary>Resizes the window to fit its content while keeping the bottom edge in place.</summary>
+    /// <summary>
+    /// Resizes the window to fit its content while keeping the bottom edge in place. Sized for the end of the running
+    /// line animations: it grows at once (a growing line is never clipped), but shrinks only after the animations
+    /// finished, so the window is not resized on every animation frame.
+    /// </summary>
     private void UpdateHeight()
     {
         _heightUpdateQueued = false;
@@ -163,12 +176,43 @@ public partial class OverlayWindow : Window
         // Flush pending layout first: a child whose visibility just changed only marks its ancestors
         // dirty during a layout pass, otherwise Measure below would return a stale cached size.
         UpdateLayout();
-        Root.Measure(new Size(rect.Width / dpi.DpiScaleX, double.PositiveInfinity));
+        var available = new Size(rect.Width / dpi.DpiScaleX, double.PositiveInfinity);
+        RevealDecorator.MeasureFinalLayout = true;
+        try
+        {
+            RevealDecorator.InvalidateAll(Root);
+            Root.Measure(available);
+        }
+        finally
+        {
+            RevealDecorator.MeasureFinalLayout = false;
+            RevealDecorator.InvalidateAll(Root);
+        }
         int height = Math.Max(1, (int)Math.Ceiling(Root.DesiredSize.Height * dpi.DpiScaleY));
+        Root.Measure(available);
+
+        var sinceChange = Stopwatch.GetElapsedTime(_lastContentChange);
+        var settle = RevealDecorator.Duration + TimeSpan.FromMilliseconds(100);
+        if (height < rect.Height && rect.Bottom == _bottomPx && sinceChange < settle)
+        {
+            _shrinkTimer ??= new DispatcherTimer(DispatcherPriority.Render, Dispatcher);
+            _shrinkTimer.Stop();
+            _shrinkTimer.Interval = settle - sinceChange;
+            _shrinkTimer.Tick -= OnShrinkTimer;
+            _shrinkTimer.Tick += OnShrinkTimer;
+            _shrinkTimer.Start();
+            return;
+        }
         if (height != rect.Height || rect.Bottom != _bottomPx)
         {
             SetWindowPos(_hwnd, HWND_TOPMOST, rect.Left, _bottomPx - height, rect.Width, height, SWP_NOACTIVATE);
         }
+    }
+
+    private void OnShrinkTimer(object? sender, EventArgs e)
+    {
+        _shrinkTimer!.Stop();
+        QueueHeightUpdate();
     }
 
     private int CurrentHeightPx() => GetWindowRect(_hwnd, out var r) && r.Height > 0 ? r.Height : 100;

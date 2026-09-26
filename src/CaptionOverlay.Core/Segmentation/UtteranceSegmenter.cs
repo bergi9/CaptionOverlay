@@ -101,7 +101,10 @@ public sealed class UtteranceSegmenter
         if (_options.EmitPartials && _samplesSincePartial >= Ms(_options.PartialIntervalMs))
         {
             _samplesSincePartial = 0;
-            (events ??= []).Add(new PartialSnapshot(_utteranceId, _utterance.ToArray(), ToTime(_utteranceStart), ++_partialSequence));
+            (events ??= []).Add(new PartialSnapshot(_utteranceId, _utterance.ToArray(), ToTime(_utteranceStart), ++_partialSequence)
+            {
+                StableSamples = Math.Clamp((int)(_options.MaxUtteranceSec * SampleRate) - Ms(_options.CutSearchMs), 0, _utterance.Count),
+            });
         }
 
         return (IReadOnlyList<SegmenterEvent>?)events ?? [];

@@ -155,10 +155,13 @@ public sealed class OpenAiRealtimeTranscriber : IApiTranscriber, IStreamingTrans
             {
                 await OpenTurnAsync(utterance, ct).ConfigureAwait(false);
             }
-            if (_sent16k < samples16kMono.Length)
+            // Partial passes upload only the stable part: in a long utterance the last seconds may still move to the
+            // next utterance at a forced cut, and restarting the turn then cost ~3 s (the server re-transcribes it all).
+            int upTo = opts.IsPartial ? Math.Min(opts.StableSamples ?? samples16kMono.Length, samples16kMono.Length) : samples16kMono.Length;
+            if (_sent16k < upTo)
             {
-                await AppendAsync(samples16kMono.AsMemory(_sent16k), ct).ConfigureAwait(false);
-                _sent16k = samples16kMono.Length;
+                await AppendAsync(samples16kMono.AsMemory(_sent16k, upTo - _sent16k), ct).ConfigureAwait(false);
+                _sent16k = upTo;
             }
 
             if (opts.IsPartial)
@@ -369,6 +372,13 @@ public sealed class OpenAiRealtimeTranscriber : IApiTranscriber, IStreamingTrans
         if (_options.Language is { Length: > 0 } language)
         {
             transcription["language"] = language;
+        }
+        if (_options.StreamingDelay is { Length: > 0 } delay && _options.Model.Contains("live-transcribe", StringComparison.OrdinalIgnoreCase))
+        {
+            // Probed (ADR-021): "delay" does not change the time from commit to transcript (~0.5 s). Lower values bring
+            // live words ~0.5-0.9 s earlier but cost accuracy (German WER: minimal 16.4 %, low 11.7 %, default 8.6 %),
+            // so the default is kept unless asked for. gpt-realtime-whisper ignores it.
+            transcription["delay"] = delay;
         }
         // No prompt: gpt-realtime-whisper rejects it, and a rejected session.update leaves the session on its
         // defaults (server VAD, no transcription model).

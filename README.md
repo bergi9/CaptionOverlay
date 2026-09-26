@@ -12,6 +12,21 @@ click-through overlay.
 - Silero VAD, partial (in-progress) captions, hallucination filter, SRT/TXT transcripts.
 - English and German UI (follows the Windows display language; can be changed in Settings), light and dark mode.
 
+## Why this exists
+There are many good live-caption and Whisper projects, most of them in Python. They work well, but getting
+one running usually means installing Python, creating a virtual environment, `pip install`-ing PyTorch or
+CTranslate2, and sometimes matching CUDA and cuDNN versions. That is fine for developers but a real hurdle for
+everyone else. No offense meant to those projects; this one simply aims at the other end: **one zip, extract,
+double-click**. It is a self-contained .NET app with the Whisper runtime (whisper.cpp) and the voice detector
+(Silero VAD via ONNX Runtime) bundled. The GPU is used through Vulkan, which ships with normal graphics drivers,
+so there is no CUDA toolkit, no Python and nothing to install.
+
+## How it was made
+The entire code base (app, core library, CLI, tests, build and release scripts, documentation) was written by
+**Claude** (Anthropic's AI model, working in Claude Code), following the plan in [`PLAN.md`](PLAN.md) and
+reviewed and tested by the repository owner. Design decisions and the problems found along the way are recorded
+in [`docs/decisions.md`](docs/decisions.md); what was verified, and how, is in [`docs/testing.md`](docs/testing.md).
+
 ## Using it
 See [`packaging/README.txt`](packaging/README.txt) (shipped in the zip). Hotkeys: `Ctrl+Alt+C` move/resize,
 `Ctrl+Alt+P` pause, `Ctrl+Alt+X` clear.

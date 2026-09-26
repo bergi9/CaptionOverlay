@@ -210,6 +210,13 @@ Details are in the log folder.</value></data>
   <data name="Api_TestConnection" xml:space="preserve"><value>Test connection</value></data>
   <data name="Api_Testing" xml:space="preserve"><value>Testing connection…</value></data>
   <data name="Api_Connected" xml:space="preserve"><value>✔ Connected — round trip {0:F0} ms</value></data>
+  <data name="Api_ModelsLoading" xml:space="preserve"><value>Loading the provider's models…</value></data>
+  <data name="Api_ModelsNeedKey" xml:space="preserve"><value>Save an API key to choose from the provider's models.</value></data>
+  <data name="Api_ModelsFailed" xml:space="preserve"><value>Could not load the model list: {0}</value></data>
+  <data name="Api_ModelsNone" xml:space="preserve"><value>The provider lists no transcription models for this key.</value></data>
+  <data name="Api_ModelDefault" xml:space="preserve"><value>{0} (default)</value></data>
+  <data name="Api_ModelNotUsable" xml:space="preserve"><value>{0} (not usable for captions, pick another model)</value></data>
+  <data name="Api_ModelsHint" xml:space="preserve"><value>Only models that work for captions are listed. Realtime models (e.g. gpt-realtime-whisper) need a streaming connection that CaptionOverlay does not support yet.</value></data>
   <data name="Api_Partials" xml:space="preserve"><value>Also send partial (in-progress) results — increases cost roughly 5–10×</value></data>
 
   <!-- Overlay tab -->

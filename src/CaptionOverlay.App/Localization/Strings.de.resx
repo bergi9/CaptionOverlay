@@ -206,6 +206,13 @@ Details stehen im Protokollordner.</value></data>
   <data name="Api_TestConnection" xml:space="preserve"><value>Verbindung testen</value></data>
   <data name="Api_Testing" xml:space="preserve"><value>Verbindung wird getestet …</value></data>
   <data name="Api_Connected" xml:space="preserve"><value>✔ Verbunden – Antwortzeit {0:F0} ms</value></data>
+  <data name="Api_ModelsLoading" xml:space="preserve"><value>Modelle des Anbieters werden geladen …</value></data>
+  <data name="Api_ModelsNeedKey" xml:space="preserve"><value>Speichere einen API-Schlüssel, um aus den Modellen des Anbieters zu wählen.</value></data>
+  <data name="Api_ModelsFailed" xml:space="preserve"><value>Die Modellliste konnte nicht geladen werden: {0}</value></data>
+  <data name="Api_ModelsNone" xml:space="preserve"><value>Der Anbieter bietet für diesen Schlüssel keine Transkriptionsmodelle an.</value></data>
+  <data name="Api_ModelDefault" xml:space="preserve"><value>{0} (Standard)</value></data>
+  <data name="Api_ModelNotUsable" xml:space="preserve"><value>{0} (für Untertitel nicht nutzbar, bitte anderes Modell wählen)</value></data>
+  <data name="Api_ModelsHint" xml:space="preserve"><value>Aufgeführt sind nur Modelle, die für Untertitel funktionieren. Realtime-Modelle (z. B. gpt-realtime-whisper) brauchen eine Streaming-Verbindung, die CaptionOverlay noch nicht unterstützt.</value></data>
   <data name="Api_Partials" xml:space="preserve"><value>Auch vorläufige Ergebnisse senden – erhöht die Kosten etwa um das 5- bis 10-Fache</value></data>
 
   <!-- Overlay tab -->

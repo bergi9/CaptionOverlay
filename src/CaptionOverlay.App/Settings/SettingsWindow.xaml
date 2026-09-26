@@ -207,16 +207,22 @@
                         <TextBlock Style="{StaticResource Hint}" Text="{l:Loc Api_Hint}" />
                         <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Loc Api_Provider}" />
                         <ComboBox ItemsSource="{Binding ApiProviders}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding ApiProvider}" />
-                        <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Loc Api_BaseUrl}" />
-                        <TextBox Text="{Binding ApiBaseUrl, UpdateSourceTrigger=LostFocus}" />
-                        <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Loc Api_Model}" />
-                        <TextBox Text="{Binding ApiModel, UpdateSourceTrigger=LostFocus}" />
                         <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Loc Api_Key}" />
                         <DockPanel>
                             <Button DockPanel.Dock="Right" Content="{l:Loc Api_SaveKey}" Click="SaveKey_OnClick" Margin="6,0,0,0" />
                             <PasswordBox x:Name="ApiKeyBox" />
                         </DockPanel>
                         <TextBlock Style="{StaticResource Hint}" Text="{Binding ApiKeyForDisplay}" />
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Loc Api_Model}" />
+                        <DockPanel Visibility="{Binding IsPresetProvider, Converter={StaticResource BoolToVis}}">
+                            <Button DockPanel.Dock="Right" Content="{l:Loc Common_Refresh}" Command="{Binding RefreshApiModelsCommand}" Margin="6,0,0,0" />
+                            <ComboBox ItemsSource="{Binding ApiModelChoices}" DisplayMemberPath="Label" SelectedItem="{Binding SelectedApiModel}" />
+                        </DockPanel>
+                        <TextBox Text="{Binding ApiModel, UpdateSourceTrigger=LostFocus}" Visibility="{Binding IsCustomProvider, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Style="{StaticResource Hint}" Text="{Binding ModelListStatus}" Visibility="{Binding ModelListStatus, Converter={StaticResource NullToCollapsed}}" />
+                        <TextBlock Style="{StaticResource Hint}" Text="{l:Loc Api_ModelsHint}" Visibility="{Binding IsPresetProvider, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Loc Api_BaseUrl}" />
+                        <TextBox Text="{Binding ApiBaseUrl, UpdateSourceTrigger=LostFocus}" />
                         <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                             <Button Content="{l:Loc Api_TestConnection}" Command="{Binding TestConnectionCommand}" />
                             <TextBlock Text="{Binding ApiTestResult}" VerticalAlignment="Center" Margin="10,0,0,0" TextWrapping="Wrap" />

@@ -30,10 +30,12 @@ public static class Commands
           models                                List catalog models and what is installed
           download <id>                         Download a catalog model (resumable, SHA-256 verified)
           hardware                              Show detected hardware and the recommended model
+          api-models --api openai|groq|custom [--api-key <key>] [--api-url <url>] [--all]
+                                                List the provider's transcription models (--all: every model)
           fixtures fetch-de [--out tests/fixtures/de] [--revision <hash>] [--force] [--write-composite <path.wav>]
                                                 Download the German FLEURS test clips (pinned revision)
 
-        Options: --verbose (debug logging to stderr). API key may also come from CAPTIONOVERLAY_API_KEY.
+        Options: --verbose (debug logging to stderr). API key may also come from CAPTIONOVERLAY_API_KEY or the key saved in the app.
         """);
 
     public static Task<int> RunAsync(CliArgs args, ILoggerFactory loggers, CancellationToken ct) => args.Command switch
@@ -46,6 +48,7 @@ public static class Commands
         "models" => Task.FromResult(Models()),
         "download" => DownloadAsync(args, loggers, ct),
         "hardware" => Task.FromResult(Hardware()),
+        "api-models" => ApiModelsAsync(args, ct),
         "fixtures" => FixturesAsync(args, ct),
         _ =>throw new CliException($"unknown command '{args.Command}' (try --help)"),
     };
@@ -163,6 +166,33 @@ public static class Commands
         return 0;
     }
 
+    private static OpenAiCompatibleTranscriber CreateApiTranscriber(CliArgs args, bool partials, ILogger? logger)
+    {
+        var preset = ApiProviderPreset.Find(args.Get("api"));
+        // Key: --api-key, CAPTIONOVERLAY_API_KEY, or the one saved in the app (Settings → API, DPAPI-encrypted for this user).
+        var key = args.Get("api-key") ?? Environment.GetEnvironmentVariable("CAPTIONOVERLAY_API_KEY")
+            ?? new Core.Settings.SecretStore().Get(Core.Settings.SecretStore.ApiKeyName(preset.Id));
+        return new OpenAiCompatibleTranscriber(new ApiTranscriberOptions
+        {
+            BaseUrl = args.Get("api-url") ?? preset.BaseUrl,
+            Model = args.Get("api-model") ?? preset.DefaultModel,
+            ApiKey = key,
+            ProviderName = preset.Name,
+            EnablePartials = partials,
+        }, logger: logger);
+    }
+
+    private static async Task<int> ApiModelsAsync(CliArgs args, CancellationToken ct)
+    {
+        await using var t = CreateApiTranscriber(args, partials: false, logger: null);
+        var models = await t.ListModelsAsync(ct);
+        foreach (string id in models.Where(m => args.Has("all") || OpenAiCompatibleTranscriber.IsTranscriptionModel(m)))
+        {
+            Console.WriteLine(args.Has("all") && OpenAiCompatibleTranscriber.IsTranscriptionModel(id) ? $"{id}  (transcription)" : id);
+        }
+        return 0;
+    }
+
     private static async Task<int> LiveAsync(CliArgs args, ILoggerFactory loggers, CancellationToken ct)
     {
         string? language = args.Get("lang");
@@ -177,17 +207,7 @@ public static class Commands
         {
             if (api)
             {
-                var preset = ApiProviderPreset.Find(args.Get("api"));
-                var key = args.Get("api-key") ?? Environment.GetEnvironmentVariable("CAPTIONOVERLAY_API_KEY");
-                var t = new OpenAiCompatibleTranscriber(new ApiTranscriberOptions
-                {
-                    BaseUrl = args.Get("api-url") ?? preset.BaseUrl,
-                    Model = args.Get("api-model") ?? preset.DefaultModel,
-                    ApiKey = key,
-                    ProviderName = preset.Name,
-                    EnablePartials = partials,
-                }, logger: loggers.CreateLogger<OpenAiCompatibleTranscriber>());
-                return new TranscriberSet(t);
+                return new TranscriberSet(CreateApiTranscriber(args, partials, loggers.CreateLogger<OpenAiCompatibleTranscriber>()));
             }
 
             var main = ResolveModel(args.Get("model") ?? "tiny-q5_1", catalog, store);

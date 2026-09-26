@@ -91,6 +91,71 @@ public sealed class OpenAiCompatibleTranscriber : ITranscriber
         return sw.Elapsed;
     }
 
+    /// <summary>
+    /// All model ids from <c>GET {baseUrl}/models</c>, sorted; filter with <see cref="IsTranscriptionModel"/>. Throws <see cref="TranscriptionException"/> (fatal for a rejected key) if the list cannot be read.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> ListModelsAsync(CancellationToken ct)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(TimeSpan.FromSeconds(15));
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(Endpoint, "../models"));
+        if (!string.IsNullOrEmpty(_options.ApiKey))
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiKey);
+        }
+        try
+        {
+            using var response = await _http.SendAsync(request, timeout.Token).ConfigureAwait(false);
+            string body = await response.Content.ReadAsStringAsync(timeout.Token).ConfigureAwait(false);
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                throw new TranscriptionException(Loc.Get("Api_KeyRejected")) { IsFatal = true };
+            }
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new TranscriptionException(Loc.Format("Api_Error", (int)response.StatusCode, ExtractError(body)));
+            }
+            using var doc = JsonDocument.Parse(body);
+            if (!doc.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
+            {
+                throw new TranscriptionException(Loc.Get("Api_UnexpectedResponse"));
+            }
+            return [.. data.EnumerateArray()
+                .Select(m => m.TryGetProperty("id", out var id) ? id.GetString() : null)
+                .OfType<string>()
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)];
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            throw new TranscriptionException(Loc.Get("Api_Timeout")) { IsTransient = true };
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new TranscriptionException(Loc.Format("Common_NetworkError", ex.Message), ex) { IsTransient = true };
+        }
+        catch (JsonException ex)
+        {
+            throw new TranscriptionException(Loc.Get("Api_UnexpectedResponse"), ex);
+        }
+    }
+
+    /// <summary>
+    /// Whether a listed model can be used for captions via <c>/audio/transcriptions</c>: Whisper models and the
+    /// "*-transcribe" models. Probed against OpenAI (2026-09): realtime/live models (<c>gpt-realtime-whisper</c>,
+    /// <c>gpt-live-transcribe</c>) only work over the Realtime (WebSocket) API and answer 404 here; diarization models
+    /// reject the prompt the pipeline sends; text-to-speech models are not transcribers.
+    /// </summary>
+    public static bool IsTranscriptionModel(string id)
+    {
+        string m = id.ToLowerInvariant();
+        return (m.Contains("whisper", StringComparison.Ordinal) || m.Contains("transcribe", StringComparison.Ordinal))
+            && !m.Contains("realtime", StringComparison.Ordinal)
+            && !m.Contains("live", StringComparison.Ordinal)
+            && !m.Contains("diarize", StringComparison.Ordinal)
+            && !m.Contains("tts", StringComparison.Ordinal);
+    }
+
     public ValueTask DisposeAsync()
     {
         if (_ownsHttp)

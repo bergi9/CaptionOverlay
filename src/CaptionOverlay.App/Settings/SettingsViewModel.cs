@@ -62,6 +62,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private readonly AppController _app;
     private readonly AppSettings _s;
     private bool _loading = true;
+    private Choice? _selectedApiModel;
+    private CancellationTokenSource? _modelsCts;
 
     public SettingsViewModel(AppController app)
     {
@@ -78,6 +80,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         RefreshModelChoices();
         Load();
         _loading = false;
+        _ = LoadApiModelsAsync();
     }
 
     public ModelManagerViewModel Models { get; }
@@ -101,6 +104,39 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public IReadOnlyList<string> FontFamilies { get; }
 
     public IReadOnlyList<Choice> ApiProviders { get; }
+
+    /// <summary>Models offered by the API provider that work for captions (loaded with the saved key).</summary>
+    public ObservableCollection<Choice> ApiModelChoices { get; } = [];
+
+    /// <summary>Loading / error state of <see cref="ApiModelChoices"/>, null when the list is fine.</summary>
+    [ObservableProperty]
+    public partial string? ModelListStatus { get; set; }
+
+    /// <summary>
+    /// The selected entry of <see cref="ApiModelChoices"/>. Nulls pushed by the ComboBox while the list is rebuilt are
+    /// ignored, so the saved model is never cleared by a refresh. Picking a model tests it right away.
+    /// </summary>
+    public Choice? SelectedApiModel
+    {
+        get => _selectedApiModel;
+        set
+        {
+            if (value is null || ReferenceEquals(value, _selectedApiModel))
+            {
+                return;
+            }
+            _selectedApiModel = value;
+            OnPropertyChanged();
+            if (value.Value is { } id && id != ApiModel)
+            {
+                ApiModel = id;
+                if (!_loading)
+                {
+                    _ = TestConnection();
+                }
+            }
+        }
+    }
 
     public IReadOnlyList<Choice> EngineModes { get; } =
     [
@@ -199,6 +235,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public bool IsApiMode => !IsLocalMode;
 
     public bool IsCustomProvider => ApiProvider == ApiProviderPreset.Custom.Id;
+
+    public bool IsPresetProvider => !IsCustomProvider;
 
     public string? ApiKeyForDisplay => Loc.Get(_app.GetApiKey(ApiProvider ?? "") is { Length: > 0 } ? "Api_KeyStored" : "Api_NoKey");
 
@@ -337,7 +375,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         var api = _s.Api;
         api.Provider = ApiProvider ?? ApiProviderPreset.Groq.Id;
         api.BaseUrl = ApiBaseUrl.Trim();
-        api.Model = ApiModel.Trim();
+        api.Model = (ApiModel ?? "").Trim();
         api.EnablePartials = ApiEnablePartials;
 
         var o = _s.Overlay;
@@ -367,14 +405,92 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             ApiModel = preset.DefaultModel;
         }
         OnPropertyChanged(nameof(IsCustomProvider));
+        OnPropertyChanged(nameof(IsPresetProvider));
         OnPropertyChanged(nameof(ApiKeyForDisplay));
         ApiTestResult = null;
+        _ = LoadApiModelsAsync();
     }
 
     public void SetApiKey(string key)
     {
         _app.SetApiKey(ApiProvider ?? "", string.IsNullOrWhiteSpace(key) ? null : key.Trim());
         OnPropertyChanged(nameof(ApiKeyForDisplay));
+        _ = LoadApiModelsAsync();
+    }
+
+    [RelayCommand]
+    private Task RefreshApiModels() => LoadApiModelsAsync();
+
+    /// <summary>
+    /// Loads the provider's model list with the saved key and keeps only models usable for captions
+    /// (<see cref="OpenAiCompatibleTranscriber.IsTranscriptionModel"/>). Without a key or connection the list holds the
+    /// saved model and the provider default, so there is always a valid choice.
+    /// </summary>
+    private async Task LoadApiModelsAsync()
+    {
+        _modelsCts?.Cancel();
+        var cts = _modelsCts = new CancellationTokenSource();
+        var preset = ApiProviderPreset.Find(ApiProvider);
+        string? key = _app.GetApiKey(preset.Id);
+        IReadOnlyList<string>? models = null;
+        if (preset == ApiProviderPreset.Custom)
+        {
+            ModelListStatus = null; // free text: self-hosted servers often have no model list
+        }
+        else if (string.IsNullOrEmpty(key))
+        {
+            ModelListStatus = Loc.Get("Api_ModelsNeedKey");
+        }
+        else
+        {
+            ModelListStatus = Loc.Get("Api_ModelsLoading");
+            try
+            {
+                await using var t = new OpenAiCompatibleTranscriber(new ApiTranscriberOptions
+                {
+                    BaseUrl = string.IsNullOrWhiteSpace(ApiBaseUrl) ? preset.BaseUrl : ApiBaseUrl,
+                    Model = preset.DefaultModel,
+                    ApiKey = key,
+                    ProviderName = preset.Name,
+                });
+                var all = await t.ListModelsAsync(cts.Token);
+                models = [.. all.Where(OpenAiCompatibleTranscriber.IsTranscriptionModel)];
+                ModelListStatus = models.Count == 0 ? Loc.Get("Api_ModelsNone") : null;
+            }
+            catch (OperationCanceledException) when (cts.IsCancellationRequested)
+            {
+                return; // superseded by a newer load
+            }
+            catch (TranscriptionException ex)
+            {
+                ModelListStatus = Loc.Format("Api_ModelsFailed", ex.Message);
+            }
+        }
+        if (!cts.IsCancellationRequested)
+        {
+            SetModelChoices(preset, models is { Count: > 0 } ? models : null);
+        }
+    }
+
+    private void SetModelChoices(ApiProviderPreset preset, IReadOnlyList<string>? available)
+    {
+        string current = ApiModel ?? "";
+        bool wasLoading = _loading;
+        _loading = true;
+        ApiModelChoices.Clear();
+        var ids = available ?? [.. new[] { current, preset.DefaultModel }.Where(id => id.Length > 0).Distinct(StringComparer.Ordinal)];
+        if (available is not null && current.Length > 0 && !available.Contains(current))
+        {
+            // Keep the saved model visible (and selected) but say why it fails, instead of silently switching.
+            ApiModelChoices.Add(new Choice(current, () => Loc.Format("Api_ModelNotUsable", current)));
+        }
+        foreach (string id in ids)
+        {
+            ApiModelChoices.Add(id == preset.DefaultModel ? new Choice(id, () => Loc.Format("Api_ModelDefault", id)) : new Choice(id, id));
+        }
+        _selectedApiModel = ApiModelChoices.FirstOrDefault(c => c.Value == current);
+        OnPropertyChanged(nameof(SelectedApiModel));
+        _loading = wasLoading;
     }
 
     [RelayCommand]
@@ -534,7 +650,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private void OnCultureChanged() => System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
     {
         foreach (var choice in Languages.Concat(UiLanguageChoices).Concat(ThemeChoices).Concat(ApiProviders).Concat(EngineModes)
-                     .Concat(GpuChoices).Concat(Devices).Concat(PartialModelChoices))
+                     .Concat(GpuChoices).Concat(Devices).Concat(PartialModelChoices).Concat(ApiModelChoices))
         {
             choice.Refresh();
         }
@@ -548,6 +664,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         Loc.CultureChanged -= OnCultureChanged;
+        _modelsCts?.Cancel();
         _app.PropertyChanged -= OnAppChanged;
         Models.InstalledChanged -= RefreshModelChoices;
         Models.Dispose();

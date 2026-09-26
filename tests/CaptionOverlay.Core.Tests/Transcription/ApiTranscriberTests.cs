@@ -114,4 +114,42 @@ public class OpenAiCompatibleTranscriberTests
         (await act.Should().ThrowAsync<TranscriptionException>()).Which.IsTransient.Should().BeTrue();
         handler.Calls.Should().Be(2, "one retry");
     }
+
+    [Fact]
+    public async Task Lists_models_from_the_models_endpoint_with_the_key()
+    {
+        var handler = new StubHandler((_, _, _) => Json(HttpStatusCode.OK,
+            """{"object":"list","data":[{"id":"whisper-1"},{"id":"gpt-4o-mini-transcribe"},{"id":"gpt-realtime-whisper"},{"id":"tts-1"}]}"""));
+        await using var t = Create(handler);
+        var models = await t.ListModelsAsync(TestContext.Current.CancellationToken);
+
+        models.Should().Equal("gpt-4o-mini-transcribe", "gpt-realtime-whisper", "tts-1", "whisper-1");
+        handler.Requests[0].Method.Should().Be(HttpMethod.Get);
+        handler.Requests[0].RequestUri!.ToString().Should().Be("https://api.example.com/v1/models");
+        handler.Requests[0].Headers.Authorization!.Parameter.Should().Be("sk-test");
+    }
+
+    [Fact]
+    public async Task Model_list_with_a_rejected_key_is_fatal()
+    {
+        var handler = new StubHandler((_, _, _) => Json(HttpStatusCode.Unauthorized, """{"error":{"message":"Incorrect API key"}}"""));
+        await using var t = Create(handler);
+        var act = () => t.ListModelsAsync(TestContext.Current.CancellationToken);
+        (await act.Should().ThrowAsync<TranscriptionException>()).Which.IsFatal.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("whisper-1", true)]
+    [InlineData("whisper-large-v3-turbo", true)] // Groq
+    [InlineData("distil-whisper-large-v3-en", true)]
+    [InlineData("gpt-4o-transcribe", true)]
+    [InlineData("gpt-4o-mini-transcribe-2025-12-15", true)]
+    [InlineData("gpt-transcribe", true)]
+    [InlineData("gpt-realtime-whisper", false)] // 404 on /audio/transcriptions (Realtime API only)
+    [InlineData("gpt-live-transcribe", false)] // same
+    [InlineData("gpt-4o-transcribe-diarize", false)] // rejects prompts
+    [InlineData("gpt-4o-mini-tts", false)]
+    [InlineData("gpt-5.5", false)]
+    public void Only_models_that_work_for_captions_are_offered(string id, bool expected) =>
+        OpenAiCompatibleTranscriber.IsTranscriptionModel(id).Should().Be(expected);
 }

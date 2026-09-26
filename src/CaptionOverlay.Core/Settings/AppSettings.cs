@@ -129,7 +129,8 @@ public sealed class AudioSettings
 
     public int EndSilenceMs { get; set; } = 600;
 
-    public double MaxUtteranceSec { get; set; } = 12;
+    /// <summary>App default 8 s (the engine default stays 12 s): best accuracy in the German end-to-end test, see ADR-024.</summary>
+    public double MaxUtteranceSec { get; set; } = 8;
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<EngineMode>))]

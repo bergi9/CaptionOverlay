@@ -96,8 +96,20 @@
                                 <Slider Minimum="0.1" Maximum="0.8" Value="{Binding AudioSilenceThreshold}" SmallChange="0.05" LargeChange="0.1" />
                                 <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Loc Audio_EndSilence, Value={Binding AudioEndSilenceMs}}" />
                                 <Slider Minimum="300" Maximum="1500" Value="{Binding AudioEndSilenceMs}" SmallChange="50" LargeChange="100" IsSnapToTickEnabled="True" TickFrequency="50" />
-                                <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Loc Audio_MaxUtterance, Value={Binding AudioMaxUtteranceSec}}" />
-                                <Slider Minimum="5" Maximum="25" Value="{Binding AudioMaxUtteranceSec}" IsSnapToTickEnabled="True" TickFrequency="1" />
+                                <!-- The trade-off is explained in a tooltip (label, info glyph and slider) to keep the tab short. -->
+                                <StackPanel Background="Transparent" ToolTipService.ShowDuration="60000" ToolTipService.InitialShowDelay="300">
+                                    <StackPanel.ToolTip>
+                                        <ToolTip MaxWidth="460">
+                                            <TextBlock Text="{l:Loc Audio_MaxUtteranceTip}" TextWrapping="Wrap" />
+                                        </ToolTip>
+                                    </StackPanel.ToolTip>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Loc Audio_MaxUtterance, Value={Binding AudioMaxUtteranceSec}}" />
+                                        <TextBlock Text="&#xE946;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Margin="6,10,0,3" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
+                                    <Slider Minimum="5" Maximum="25" Value="{Binding AudioMaxUtteranceSec}" IsSnapToTickEnabled="True" TickFrequency="1" />
+                                </StackPanel>
                             </StackPanel>
                         </Expander>
                     </StackPanel>

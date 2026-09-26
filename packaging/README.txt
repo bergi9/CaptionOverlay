@@ -22,8 +22,8 @@ Getting started
 "Windows protected your PC"
 ---------------------------
 The app is not code-signed, so Windows SmartScreen may warn you the first time.
-Click "More info", then "Run anyway". You can verify the download with SHA256SUMS.txt
-from the GitHub release page (PowerShell: Get-FileHash .\CaptionOverlay-*.zip).
+Click "More info", then "Run anyway". You can verify the download with the SHA-256 checksum
+shown on the GitHub release page (PowerShell: Get-FileHash .\CaptionOverlay-*.zip).
 
 Everyday use
 ------------

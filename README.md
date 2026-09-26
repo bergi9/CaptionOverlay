@@ -56,7 +56,7 @@ Portable zip (writes to `artifacts/`):
 powershell -NoProfile -File scripts/package.ps1 -Version 0.1.0
 ```
 
-Pushing a `v*` tag runs `.github/workflows/release.yml`, which attaches the zip and `SHA256SUMS.txt` to a draft release.
+Pushing a version tag (`v1.2.3`, or `v1.2.3-beta.1` for a pre-release) runs `.github/workflows/release.yml`: tests, packages and creates a draft release with the zip as its only asset (SHA-256 in the release notes). Review the draft on GitHub and publish it.
 
 ### Developer CLI
 `src/CaptionOverlay.Cli` exercises the pipeline without UI:

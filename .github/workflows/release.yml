@@ -1,7 +1,8 @@
 name: Release
 
-# Pushing a tag like v0.2.0 builds, tests and packages the portable zip and attaches it to a DRAFT
-# GitHub release. Review the draft and publish it manually.
+# Pushing a tag like v0.2.0 (or v0.2.0-beta.1) tests, builds the portable zip and attaches it as the only asset
+# to a DRAFT GitHub release; its SHA-256 is in the release notes. Review the draft and publish it manually.
+# A tag with a suffix (v0.2.0-beta.1) becomes a pre-release, which the app's update check ignores.
 on:
   push:
     tags: ['v*']
@@ -9,15 +10,28 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.ref_name }}
+
 jobs:
   release:
     runs-on: windows-latest
     steps:
+      - name: Check tag
+        shell: pwsh
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          # The app compares the tag of the latest release with its own version (UpdateChecker), so it must parse.
+          if ($env:TAG -notmatch '^v\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
+            throw "Tag '$env:TAG' is not a version tag like v1.2.3 or v1.2.3-beta.1"
+          }
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
       - name: Test
+        # Tests needing a downloaded Whisper model or an API key are left out or skip themselves.
         run: dotnet test --solution CaptionOverlay.slnx -c Release -- --filter-not-trait "Category=RequiresModel"
       - name: Package
         shell: pwsh
@@ -26,8 +40,33 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
         run: |
-          $zip = Get-ChildItem artifacts/CaptionOverlay-*.zip | Select-Object -First 1
-          gh release create "${{ github.ref_name }}" $zip.FullName artifacts/SHA256SUMS.txt `
-            --draft --title "CaptionOverlay ${{ github.ref_name }}" `
-            --notes "Portable build for Windows 10/11 x64. Extract and run CaptionOverlay.exe. Unsigned: SmartScreen may warn (More info -> Run anyway). Verify with SHA256SUMS.txt."
+          $PSNativeCommandUseErrorActionPreference = $false # gh exit codes are checked below
+          function Invoke-Gh { gh @args; if ($LASTEXITCODE -ne 0) { throw "gh $($args[0..1]) failed" } }
+          $tag = $env:TAG
+          $zip = Get-Item "artifacts/CaptionOverlay-$tag-win-x64.zip"
+          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $sizeMb = [Math]::Round($zip.Length / 1MB)
+          @"
+          Portable build for Windows 10/11 x64 ($sizeMb MB). Download **$($zip.Name)**, extract it to any folder and run ``CaptionOverlay.exe``. Nothing else to install; Whisper models are downloaded on first start.
+
+          The app is not code-signed: SmartScreen may warn ("More info" -> "Run anyway").
+
+          SHA-256 of $($zip.Name):
+          ``````
+          $hash
+          ``````
+          Check it in PowerShell: ``Get-FileHash .\$($zip.Name)``
+          "@ | Set-Content -Encoding utf8 notes.md
+
+          $prerelease = @(if ($tag.Contains('-')) { '--prerelease' })
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            # Re-run of the workflow: replace the zip and the notes of the existing release.
+            Invoke-Gh release upload $tag $zip.FullName --clobber
+            Invoke-Gh release edit $tag --notes-file notes.md
+          } else {
+            Invoke-Gh release create $tag $zip.FullName --draft --verify-tag --title "CaptionOverlay $tag" --notes-file notes.md @prerelease
+          }
+          $global:LASTEXITCODE = 0

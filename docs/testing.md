@@ -79,7 +79,7 @@ Test machine for the ✅ items: Windows 11 Pro 26200, RTX 4090, 16 cores, 3840×
 ## M9 — Packaging
 - ✅ `scripts/package.ps1 -Version 0.1.0` → 84.6 MB zip, 212.7 MB extracted, `SHA256SUMS.txt`; zip extracted to a temp folder runs, loads Vulkan, captures.
 - ⚠ Size budget < 150 MB not met (ADR-003). Single-file not possible (ADR-003).
-- ⏳ Clean Windows 10 and 11 VMs without .NET, no admin; Vulkan on a machine with only the GPU driver; stale "Start with Windows" detection after moving the folder; draft release workflow on a `v*` tag.
+- ⏳ Clean Windows 10 and 11 VMs without .NET, no admin; Vulkan on a machine with only the GPU driver; stale "Start with Windows" detection after moving the folder; release workflow on a `v*` tag (dry-run locally: package step and the release step with a stubbed `gh` for new, pre-release and re-run cases; not yet run on GitHub).
 
 ## M10 — Hardening
 - ✅ Capture restart retries (5 attempts) after device changes / resume; readable messages for missing native runtime, invalid model, disk space, network errors.

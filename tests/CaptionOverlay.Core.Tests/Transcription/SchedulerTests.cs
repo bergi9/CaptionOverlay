@@ -116,9 +116,11 @@ public class TranscriptionSchedulerTests
         await Task.Delay(350, TestContext.Current.CancellationToken);
         var sorted = times.OrderBy(t => t).ToList();
         // The loop takes ~0.8 s locally but up to twice that on a slow CI runner (coarse timers): the bound follows the
-        // measured time, the spacing below is what matters.
-        int maxPartials = (int)(offering.Elapsed.TotalMilliseconds / 300) + 1;
+        // measured time (one partial at the start, one per 300 ms, one still pending when the loop ends), the spacing
+        // below is what matters.
+        int maxPartials = (int)(offering.Elapsed.TotalMilliseconds / 300) + 2;
         sorted.Count.Should().BeInRange(2, maxPartials);
+        sorted.Count.Should().BeLessThan(20, "most offered partials are dropped");
         for (int i = 1; i < sorted.Count; i++)
         {
             (sorted[i] - sorted[i - 1]).TotalMilliseconds.Should().BeGreaterThan(280);

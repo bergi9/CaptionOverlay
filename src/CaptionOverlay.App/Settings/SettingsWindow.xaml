@@ -227,7 +227,10 @@
                             <Button Content="{l:Loc Api_TestConnection}" Command="{Binding TestConnectionCommand}" />
                             <TextBlock Text="{Binding ApiTestResult}" VerticalAlignment="Center" Margin="10,0,0,0" TextWrapping="Wrap" />
                         </StackPanel>
-                        <CheckBox Content="{l:Loc Api_Partials}" IsChecked="{Binding ApiEnablePartials}" Margin="0,12,0,0" />
+                        <CheckBox Content="{l:Loc Api_Partials}" IsChecked="{Binding ApiEnablePartials}" Margin="0,12,0,0"
+                                  Visibility="{Binding IsUploadModel, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,12,0,0" Text="{l:Loc Api_StreamingHint}"
+                                   Visibility="{Binding IsStreamingModel, Converter={StaticResource BoolToVis}}" />
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

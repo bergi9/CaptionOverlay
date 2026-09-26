@@ -13,10 +13,28 @@ public interface ITranscriber : IAsyncDisposable
     Task<TranscriptionResult> TranscribeAsync(float[] samples16kMono, TranscriptionOptions opts, CancellationToken ct);
 }
 
+/// <param name="UtteranceId">The segmenter utterance this pass belongs to (partials and the final share it); streaming transcribers use it to continue the same turn.</param>
+/// <param name="ForcedCut">The final ends at a forced cut, so audio after it (possibly already streamed) belongs to the next utterance.</param>
 public sealed record TranscriptionOptions(
     string? Language,
     string? Prompt,
-    bool IsPartial);
+    bool IsPartial,
+    Guid? UtteranceId = null,
+    bool ForcedCut = false);
+
+/// <summary>A transcriber behind a network API; the connection test is shown in Settings and the wizard.</summary>
+public interface IApiTranscriber : ITranscriber
+{
+    /// <summary>Checks key, endpoint and model; returns the round-trip time. Throws <see cref="TranscriptionException"/>.</summary>
+    Task<TimeSpan> TestConnectionAsync(CancellationToken ct);
+}
+
+/// <summary>A transcriber that keeps per-utterance state across calls (audio already streamed to a server).</summary>
+public interface IStreamingTranscriber : ITranscriber
+{
+    /// <summary>The utterance was discarded before its final pass (too short, paused): forget its state.</summary>
+    void CancelUtterance(Guid utteranceId);
+}
 
 public sealed record TranscriptionResult(
     string Text,

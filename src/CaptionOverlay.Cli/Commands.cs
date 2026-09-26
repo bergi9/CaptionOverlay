@@ -166,29 +166,38 @@ public static class Commands
         return 0;
     }
 
-    private static OpenAiCompatibleTranscriber CreateApiTranscriber(CliArgs args, bool partials, ILogger? logger)
+    /// <summary>--api-key, CAPTIONOVERLAY_API_KEY, or the key saved in the app (Settings → API, DPAPI-encrypted for this user).</summary>
+    private static string? ApiKey(CliArgs args, ApiProviderPreset preset) =>
+        args.Get("api-key") ?? Environment.GetEnvironmentVariable("CAPTIONOVERLAY_API_KEY")
+            ?? new Core.Settings.SecretStore().Get(Core.Settings.SecretStore.ApiKeyName(preset.Id));
+
+    private static Task<IApiTranscriber> CreateApiTranscriberAsync(CliArgs args, bool partials, string? language, ILogger? logger, CancellationToken ct)
     {
         var preset = ApiProviderPreset.Find(args.Get("api"));
-        // Key: --api-key, CAPTIONOVERLAY_API_KEY, or the one saved in the app (Settings → API, DPAPI-encrypted for this user).
-        var key = args.Get("api-key") ?? Environment.GetEnvironmentVariable("CAPTIONOVERLAY_API_KEY")
-            ?? new Core.Settings.SecretStore().Get(Core.Settings.SecretStore.ApiKeyName(preset.Id));
-        return new OpenAiCompatibleTranscriber(new ApiTranscriberOptions
+        return ApiTranscribers.CreateAsync(new ApiTranscriberOptions
         {
             BaseUrl = args.Get("api-url") ?? preset.BaseUrl,
             Model = args.Get("api-model") ?? preset.DefaultModel,
-            ApiKey = key,
+            ApiKey = ApiKey(args, preset),
             ProviderName = preset.Name,
             EnablePartials = partials,
-        }, logger: logger);
+            Language = language,
+        }, logger, ct);
     }
 
     private static async Task<int> ApiModelsAsync(CliArgs args, CancellationToken ct)
     {
-        await using var t = CreateApiTranscriber(args, partials: false, logger: null);
-        var models = await t.ListModelsAsync(ct);
-        foreach (string id in models.Where(m => args.Has("all") || OpenAiCompatibleTranscriber.IsTranscriptionModel(m)))
+        await using var t = new OpenAiCompatibleTranscriber(new ApiTranscriberOptions
         {
-            Console.WriteLine(args.Has("all") && OpenAiCompatibleTranscriber.IsTranscriptionModel(id) ? $"{id}  (transcription)" : id);
+            BaseUrl = args.Get("api-url") ?? ApiProviderPreset.Find(args.Get("api")).BaseUrl,
+            Model = "list",
+            ApiKey = ApiKey(args, ApiProviderPreset.Find(args.Get("api"))),
+        });
+        var models = await t.ListModelsAsync(ct);
+        foreach (string id in models.Where(m => args.Has("all") || ApiTranscribers.IsUsableModel(m)))
+        {
+            Console.WriteLine(OpenAiRealtimeTranscriber.IsStreamingModel(id) ? $"{id}  (streaming)"
+                : args.Has("all") && OpenAiCompatibleTranscriber.IsTranscriptionModel(id) ? $"{id}  (transcription)" : id);
         }
         return 0;
     }
@@ -200,6 +209,7 @@ public static class Commands
         var gpu = args.Has("cpu") ? GpuPreference.CpuOnly : GpuPreference.Auto;
         bool api = args.Has("api");
         bool partials = !args.Has("no-partials");
+        bool streaming = api && OpenAiRealtimeTranscriber.IsStreamingModel(args.Get("api-model"));
         var catalog = ModelCatalog.LoadBundled();
         var store = new ModelStore();
 
@@ -207,7 +217,7 @@ public static class Commands
         {
             if (api)
             {
-                return new TranscriberSet(CreateApiTranscriber(args, partials, loggers.CreateLogger<OpenAiCompatibleTranscriber>()));
+                return new TranscriberSet(await CreateApiTranscriberAsync(args, partials, language, loggers.CreateLogger("ApiTranscriber"), token));
             }
 
             var main = ResolveModel(args.Get("model") ?? "tiny-q5_1", catalog, store);
@@ -232,8 +242,10 @@ public static class Commands
                 : () => new WavFileAudioSource(wav, realtime: args.Has("realtime")),
             VadFactory = args.Has("no-vad") ? null : () => new SileroVad(SileroVad.DefaultModelPath),
             Language = language,
-            EnablePartials = partials,
-            Scheduler = new SchedulerOptions { MinPartialInterval = api ? TimeSpan.FromSeconds(1.5) : TimeSpan.Zero },
+            // Streaming models need the partial passes: they carry the audio upload.
+            EnablePartials = partials || streaming,
+            Segmenter = streaming ? new SegmenterOptions { PartialIntervalMs = 250 } : new SegmenterOptions(),
+            Scheduler = new SchedulerOptions { MinPartialInterval = api && !streaming ? TimeSpan.FromSeconds(1.5) : TimeSpan.Zero },
         };
 
         await using var pipeline = new CaptionPipeline(loggers);

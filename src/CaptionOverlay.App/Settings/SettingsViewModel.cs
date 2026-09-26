@@ -238,6 +238,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     public bool IsPresetProvider => !IsCustomProvider;
 
+    /// <summary>Streaming models always show live text (no extra cost per update), so the partials option does not apply.</summary>
+    public bool IsStreamingModel => OpenAiRealtimeTranscriber.IsStreamingModel(ApiModel);
+
+    public bool IsUploadModel => !IsStreamingModel;
+
     public string? ApiKeyForDisplay => Loc.Get(_app.GetApiKey(ApiProvider ?? "") is { Length: > 0 } ? "Api_KeyStored" : "Api_NoKey");
 
     private static string NativeName(CultureInfo culture)
@@ -314,6 +319,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         if (e.PropertyName == nameof(ApiProvider))
         {
             OnProviderChanged();
+        }
+        if (e.PropertyName is nameof(ApiModel))
+        {
+            OnPropertyChanged(nameof(IsStreamingModel));
+            OnPropertyChanged(nameof(IsUploadModel));
         }
         if (e.PropertyName is nameof(EngineMode))
         {
@@ -454,7 +464,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                     ProviderName = preset.Name,
                 });
                 var all = await t.ListModelsAsync(cts.Token);
-                models = [.. all.Where(OpenAiCompatibleTranscriber.IsTranscriptionModel)];
+                models = [.. all.Where(ApiTranscribers.IsUsableModel)];
                 ModelListStatus = models.Count == 0 ? Loc.Get("Api_ModelsNone") : null;
             }
             catch (OperationCanceledException) when (cts.IsCancellationRequested)
@@ -486,7 +496,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
         foreach (string id in ids)
         {
-            ApiModelChoices.Add(id == preset.DefaultModel ? new Choice(id, () => Loc.Format("Api_ModelDefault", id)) : new Choice(id, id));
+            ApiModelChoices.Add(id == preset.DefaultModel ? new Choice(id, () => Loc.Format("Api_ModelDefault", id))
+                : OpenAiRealtimeTranscriber.IsStreamingModel(id) ? new Choice(id, () => Loc.Format("Api_ModelStreaming", id))
+                : new Choice(id, id));
         }
         _selectedApiModel = ApiModelChoices.FirstOrDefault(c => c.Value == current);
         OnPropertyChanged(nameof(SelectedApiModel));
@@ -500,14 +512,16 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         var preset = ApiProviderPreset.Find(ApiProvider);
         try
         {
-            await using var t = new OpenAiCompatibleTranscriber(new ApiTranscriberOptions
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            // Streaming models open their session in CreateAsync; that handshake is the test.
+            await using var t = await ApiTranscribers.CreateAsync(new ApiTranscriberOptions
             {
                 BaseUrl = string.IsNullOrWhiteSpace(ApiBaseUrl) ? preset.BaseUrl : ApiBaseUrl,
                 Model = string.IsNullOrWhiteSpace(ApiModel) ? preset.DefaultModel : ApiModel,
                 ApiKey = _app.GetApiKey(ApiProvider ?? ""),
                 ProviderName = preset.Name,
             });
-            var latency = await t.TestConnectionAsync(CancellationToken.None);
+            var latency = t is OpenAiRealtimeTranscriber ? sw.Elapsed : await t.TestConnectionAsync(CancellationToken.None);
             ApiTestResult = Loc.Format("Api_Connected", latency.TotalMilliseconds);
         }
         catch (Exception ex)

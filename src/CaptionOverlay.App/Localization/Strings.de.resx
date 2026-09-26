@@ -212,7 +212,9 @@ Details stehen im Protokollordner.</value></data>
   <data name="Api_ModelsNone" xml:space="preserve"><value>Der Anbieter bietet für diesen Schlüssel keine Transkriptionsmodelle an.</value></data>
   <data name="Api_ModelDefault" xml:space="preserve"><value>{0} (Standard)</value></data>
   <data name="Api_ModelNotUsable" xml:space="preserve"><value>{0} (für Untertitel nicht nutzbar, bitte anderes Modell wählen)</value></data>
-  <data name="Api_ModelsHint" xml:space="preserve"><value>Aufgeführt sind nur Modelle, die für Untertitel funktionieren. Realtime-Modelle (z. B. gpt-realtime-whisper) brauchen eine Streaming-Verbindung, die CaptionOverlay noch nicht unterstützt.</value></data>
+  <data name="Api_ModelStreaming" xml:space="preserve"><value>{0} (Streaming)</value></data>
+  <data name="Api_ModelsHint" xml:space="preserve"><value>Aufgeführt sind nur Modelle, die für Untertitel funktionieren. Streaming-Modelle laden den Ton schon während des Sprechens hoch und zeigen den Text Wort für Wort; die anderen senden jeden fertigen Satz.</value></data>
+  <data name="Api_StreamingHint" xml:space="preserve"><value>Streaming-Modell: Der Text erscheint Wort für Wort, während gesprochen wird, ohne Aufpreis. Abgerechnet wird pro Minute gesendeter Sprache.</value></data>
   <data name="Api_Partials" xml:space="preserve"><value>Auch vorläufige Ergebnisse senden – erhöht die Kosten etwa um das 5- bis 10-Fache</value></data>
 
   <!-- Overlay tab -->

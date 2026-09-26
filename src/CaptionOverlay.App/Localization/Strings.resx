@@ -216,7 +216,9 @@ Details are in the log folder.</value></data>
   <data name="Api_ModelsNone" xml:space="preserve"><value>The provider lists no transcription models for this key.</value></data>
   <data name="Api_ModelDefault" xml:space="preserve"><value>{0} (default)</value></data>
   <data name="Api_ModelNotUsable" xml:space="preserve"><value>{0} (not usable for captions, pick another model)</value></data>
-  <data name="Api_ModelsHint" xml:space="preserve"><value>Only models that work for captions are listed. Realtime models (e.g. gpt-realtime-whisper) need a streaming connection that CaptionOverlay does not support yet.</value></data>
+  <data name="Api_ModelStreaming" xml:space="preserve"><value>{0} (streaming)</value></data>
+  <data name="Api_ModelsHint" xml:space="preserve"><value>Only models that work for captions are listed. Streaming models upload the audio while someone speaks and show the text word by word; the others send each finished sentence.</value></data>
+  <data name="Api_StreamingHint" xml:space="preserve"><value>Streaming model: the text appears word by word while someone speaks, at no extra cost. Billed per minute of speech sent.</value></data>
   <data name="Api_Partials" xml:space="preserve"><value>Also send partial (in-progress) results — increases cost roughly 5–10×</value></data>
 
   <!-- Overlay tab -->

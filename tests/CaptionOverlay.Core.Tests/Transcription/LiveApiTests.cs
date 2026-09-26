@@ -4,6 +4,7 @@ using CaptionOverlay.Cli.Fixtures;
 using CaptionOverlay.Core.Audio;
 using CaptionOverlay.Core.Captions;
 using CaptionOverlay.Core.Pipeline;
+using CaptionOverlay.Core.Segmentation;
 using CaptionOverlay.Core.Settings;
 using CaptionOverlay.Core.Tests.German;
 using CaptionOverlay.Core.Transcription;
@@ -44,14 +45,22 @@ public class LiveApiTests
         return config!.Value;
     }
 
-    private static OpenAiCompatibleTranscriber Create((ApiProviderPreset Preset, string Key, string Model) c, string? key = null) =>
-        new(new ApiTranscriberOptions { BaseUrl = c.Preset.BaseUrl, Model = c.Model, ApiKey = key ?? c.Key, ProviderName = c.Preset.Name });
+    /// <summary>Like the app: streaming models (e.g. gpt-realtime-whisper) connect over the Realtime API, others upload each utterance.</summary>
+    private static Task<IApiTranscriber> CreateAsync((ApiProviderPreset Preset, string Key, string Model) c, string? key = null, string? language = null) =>
+        ApiTranscribers.CreateAsync(new ApiTranscriberOptions
+        {
+            BaseUrl = c.Preset.BaseUrl,
+            Model = c.Model,
+            ApiKey = key ?? c.Key,
+            ProviderName = c.Preset.Name,
+            Language = language,
+        }, ct: Ct);
 
     [Fact]
     public async Task Connection_test_succeeds()
     {
         var c = Require();
-        await using var t = Create(c);
+        await using var t = await CreateAsync(c, language: "de");
         var latency = await t.TestConnectionAsync(Ct);
         TestContext.Current.SendDiagnosticMessage(Invariant($"{c.Preset.Name} {c.Model}: round trip {latency.TotalMilliseconds:F0} ms"));
         latency.Should().BeLessThan(TimeSpan.FromSeconds(15));
@@ -61,8 +70,11 @@ public class LiveApiTests
     public async Task Wrong_key_is_rejected_as_fatal_without_leaking_it()
     {
         var c = Require();
-        await using var t = Create(c, key: "sk-invalid-key-for-test");
-        var act = () => t.TranscribeAsync(new float[16000], new TranscriptionOptions("en", null, false), Ct);
+        var act = async () =>
+        {
+            await using var t = await CreateAsync(c, key: "sk-invalid-key-for-test");
+            await t.TranscribeAsync(new float[16000], new TranscriptionOptions("en", null, false), Ct);
+        };
         var ex = (await act.Should().ThrowAsync<TranscriptionException>()).Which;
         ex.IsFatal.Should().BeTrue();
         ex.Message.Should().Contain("API key rejected").And.NotContain("sk-invalid");
@@ -72,7 +84,7 @@ public class LiveApiTests
     public async Task Transcribes_english_speech_fixture()
     {
         var c = Require();
-        await using var t = Create(c);
+        await using var t = await CreateAsync(c, language: "en");
         var r = await t.TranscribeAsync(WavIO.ReadMono16k(Fixtures.Path("speech_en.wav")), new TranscriptionOptions("en", null, false), Ct);
         TestContext.Current.SendDiagnosticMessage(Invariant($"{c.Model} ({r.InferenceTime.TotalMilliseconds:F0} ms): \"{r.Text}\""));
         r.Text.ToLowerInvariant().Should().Contain("weather").And.Contain("umbrella");
@@ -82,7 +94,7 @@ public class LiveApiTests
     public async Task German_clips_wer()
     {
         var c = Require();
-        await using var t = Create(c);
+        await using var t = await CreateAsync(c, language: "de");
         int words = 0, errors = 0;
         var report = new StringBuilder($"{c.Preset.Name} {c.Model} German clips:\n");
         foreach (var clip in GermanFixtures.Clips)
@@ -105,6 +117,7 @@ public class LiveApiTests
     {
         var c = Require();
         var composite = GermanFixtures.Composite;
+        bool streaming = OpenAiRealtimeTranscriber.IsStreamingModel(c.Model);
         var stereo = composite.ToStereo48k();
         var lines = new List<CaptionLine>();
         var pipeline = new CaptionPipeline();
@@ -120,9 +133,10 @@ public class LiveApiTests
             AudioSourceFactory = () => new MemoryAudioSource(stereo, 48000, 2),
             VadFactory = () => new SileroVad(Fixtures.SileroModel),
             Language = "de",
-            EnablePartials = false,
+            EnablePartials = streaming,
+            Segmenter = streaming ? new SegmenterOptions { PartialIntervalMs = 250 } : new SegmenterOptions(),
         };
-        await pipeline.StartAsync(config, _ => Task.FromResult(new TranscriberSet(Create(c))), Ct);
+        await pipeline.StartAsync(config, async ct => new TranscriberSet(await CreateAsync(c, language: "de")), Ct);
         await pipeline.WaitForSourceCompletionAsync(Ct).WaitAsync(TimeSpan.FromMinutes(2), Ct);
         await pipeline.StopAsync(drain: true, TimeSpan.FromMinutes(3));
 

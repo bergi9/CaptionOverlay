@@ -11,6 +11,9 @@ public sealed record FinalUtterance(Guid UtteranceId, float[] Samples, TimeSpan 
     : SegmenterEvent(UtteranceId)
 {
     public TimeSpan End => StartOffset + Duration;
+
+    /// <summary>Ended by the length limit: the audio right after <see cref="End"/> starts the next utterance (vs. trailing silence).</summary>
+    public bool IsForcedCut { get; init; }
 }
 
 /// <summary>An utterance that started but turned out too short (click, breath). Clears any tentative text.</summary>

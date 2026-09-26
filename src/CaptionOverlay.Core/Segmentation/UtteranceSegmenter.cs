@@ -228,7 +228,7 @@ public sealed class UtteranceSegmenter
         _lastSpeechEnd = Math.Max(_lastSpeechEnd, _utteranceStart);
         _samplesSincePartial = _utterance.Count;
 
-        return new FinalUtterance(id, samples, start, ToTime(samples.Length));
+        return new FinalUtterance(id, samples, start, ToTime(samples.Length)) { IsForcedCut = true };
     }
 
     /// <summary>Index into the current utterance at the centre of the lowest-energy window near the end.</summary>

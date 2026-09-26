@@ -98,6 +98,7 @@ public class UtteranceSegmenterTests
             finals[i].StartOffset.Should().Be(finals[i - 1].End, "cuts must not drop audio");
         }
         finals.Select(f => f.UtteranceId).Should().OnlyHaveUniqueItems();
+        finals.Select(f => f.IsForcedCut).Should().Equal([true, true, false], "the last one ends on silence, the others at the length limit");
     }
 
     [Fact]

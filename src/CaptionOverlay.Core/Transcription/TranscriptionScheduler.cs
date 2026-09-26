@@ -166,7 +166,7 @@ public sealed class TranscriptionScheduler : IAsyncDisposable
         _signal.Release();
     }
 
-    /// <summary>Forgets a pending partial for a discarded utterance.</summary>
+    /// <summary>Forgets a pending partial for a discarded utterance (and tells a streaming transcriber).</summary>
     public void CancelUtterance(Guid utteranceId)
     {
         lock (_gate)
@@ -177,6 +177,8 @@ public sealed class TranscriptionScheduler : IAsyncDisposable
                 _pendingPartial = null;
             }
         }
+        // A streaming transcriber may already hold audio of this utterance.
+        (_transcribers?.PartialOrFinal as IStreamingTranscriber)?.CancelUtterance(utteranceId);
     }
 
     /// <summary>Completes when no final is queued or running (partials are ignored).</summary>
@@ -306,7 +308,7 @@ public sealed class TranscriptionScheduler : IAsyncDisposable
         var transcriber = _transcribers!.Final;
         try
         {
-            var result = await transcriber.TranscribeAsync(final.Samples, Options(isPartial: false), ct).ConfigureAwait(false);
+            var result = await transcriber.TranscribeAsync(final.Samples, Options(final), ct).ConfigureAwait(false);
             double audioSeconds = Math.Max(final.Duration.TotalSeconds, 0.001);
             LastRealTimeFactor = result.InferenceTime.TotalSeconds / audioSeconds;
             _logger.LogInformation("Final {Id}: {Audio:F2} s audio in {Ms} ms (RTF {Rtf:F2})",
@@ -351,7 +353,7 @@ public sealed class TranscriptionScheduler : IAsyncDisposable
         }
         try
         {
-            var result = await transcriber.TranscribeAsync(partial.Samples, Options(isPartial: true), ct).ConfigureAwait(false);
+            var result = await transcriber.TranscribeAsync(partial.Samples, Options(partial), ct).ConfigureAwait(false);
             PartialCompleted?.Invoke(partial, result);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -373,7 +375,8 @@ public sealed class TranscriptionScheduler : IAsyncDisposable
         }
     }
 
-    private TranscriptionOptions Options(bool isPartial) => new(Language, PromptProvider?.Invoke(), isPartial);
+    private TranscriptionOptions Options(SegmenterEvent job) =>
+        new(Language, PromptProvider?.Invoke(), job is PartialSnapshot, job.UtteranceId, job is FinalUtterance { IsForcedCut: true });
 
     private void MarkBusyLocked()
     {

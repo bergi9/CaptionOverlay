@@ -99,20 +99,31 @@ public sealed class LocalWhisperTranscriber : ITranscriber
 
             var sw = Stopwatch.StartNew();
             WhisperFactory factory;
+            // whisper.cpp's native model load (ggml/Vulkan backend setup) is not thread-safe: two loads at the same
+            // time crashed the process with an access violation (found by parallel tests; in the app: benchmark while
+            // the engine loads). One native load or free at a time, process-wide.
+            NativeGate.Wait(ct);
             try
             {
-                factory = WhisperFactory.FromPath(options.ModelPath, new WhisperFactoryOptions { UseGpu = useGpu });
-                // Loading can be lazy: building a processor forces the model to actually load.
-                using var probe = factory.CreateBuilder().Build();
+                try
+                {
+                    factory = WhisperFactory.FromPath(options.ModelPath, new WhisperFactoryOptions { UseGpu = useGpu });
+                    // Loading can be lazy: building a processor forces the model to actually load.
+                    using var probe = factory.CreateBuilder().Build();
+                }
+                catch (Exception ex) when (ex is FileNotFoundException or DllNotFoundException or BadImageFormatException)
+                {
+                    // The model file exists (checked above), so this is the native whisper.cpp library itself.
+                    throw new TranscriptionException(Loc.Get("Whisper_RuntimeMissing"), ex) { IsFatal = true };
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    throw new TranscriptionException(InvalidModelMessage, ex) { IsFatal = true };
+                }
             }
-            catch (Exception ex) when (ex is FileNotFoundException or DllNotFoundException or BadImageFormatException)
+            finally
             {
-                // The model file exists (checked above), so this is the native whisper.cpp library itself.
-                throw new TranscriptionException(Loc.Get("Whisper_RuntimeMissing"), ex) { IsFatal = true };
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                throw new TranscriptionException(InvalidModelMessage, ex) { IsFatal = true };
+                NativeGate.Release();
             }
 
             string runtime = DescribeRuntime(RuntimeOptions.LoadedLibrary);
@@ -183,7 +194,15 @@ public sealed class LocalWhisperTranscriber : ITranscriber
         await _inference.WaitAsync().ConfigureAwait(false);
         try
         {
-            _factory.Dispose();
+            await NativeGate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                _factory.Dispose();
+            }
+            finally
+            {
+                NativeGate.Release();
+            }
         }
         finally
         {
@@ -191,6 +210,9 @@ public sealed class LocalWhisperTranscriber : ITranscriber
             _inference.Dispose();
         }
     }
+
+    /// <summary>Serializes native model loads and frees (see <see cref="LoadCoreAsync"/>).</summary>
+    private static readonly SemaphoreSlim NativeGate = new(1, 1);
 
     private static string InvalidModelMessage => Loc.Get("Whisper_InvalidModel");
 

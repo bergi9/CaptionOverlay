@@ -52,7 +52,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
     private TranscriptSession? _transcript;
     private bool _quitting;
     private bool _startError;
-    private (string? Language, bool Partials, EngineMode Mode) _runningEngineParams;
+    private (string? Language, bool Partials, EngineMode Mode, bool Streaming) _runningEngineParams;
 
     public AppController(ILoggerFactory loggers)
     {
@@ -348,7 +348,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
 
     private bool NeedsRestartForEngineChange()
     {
-        var wanted = (EffectiveLanguage(), PartialsEnabled(), Settings.Engine.Mode);
+        var wanted = (EffectiveLanguage(), PartialsEnabled(), Settings.Engine.Mode, IsStreaming());
         return wanted != _runningEngineParams;
     }
 
@@ -363,7 +363,8 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         {
             _logger.LogWarning("Silero VAD model missing at {Path}; falling back to fixed windows", vadPath);
         }
-        _runningEngineParams = (EffectiveLanguage(), PartialsEnabled(), Settings.Engine.Mode);
+        _runningEngineParams = (EffectiveLanguage(), PartialsEnabled(), Settings.Engine.Mode, IsStreaming());
+        bool streaming = IsStreaming();
         bool api = Settings.Engine.Mode == EngineMode.Api;
         return new PipelineConfig
         {
@@ -375,17 +376,21 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
                 SilenceThreshold = Math.Min(audio.SilenceThreshold, audio.SpeechThreshold),
                 EndSilenceMs = audio.EndSilenceMs,
                 MaxUtteranceSec = Math.Clamp(audio.MaxUtteranceSec, 3, 30),
-                PartialIntervalMs = Math.Max(200, Settings.Engine.PartialIntervalMs),
+                // Streaming engines upload audio with each partial pass: a short interval keeps the upload close to live.
+                PartialIntervalMs = streaming ? 250 : Math.Max(200, Settings.Engine.PartialIntervalMs),
             },
             Language = EffectiveLanguage(),
             EnablePartials = PartialsEnabled(),
-            Scheduler = new SchedulerOptions { MinPartialInterval = api ? TimeSpan.FromSeconds(1.5) : TimeSpan.Zero },
+            Scheduler = new SchedulerOptions { MinPartialInterval = api && !streaming ? TimeSpan.FromSeconds(1.5) : TimeSpan.Zero },
         };
     }
 
     private string? EffectiveLanguage() => Settings.Engine.Language is "" or "auto" ? null : Settings.Engine.Language;
 
-    private bool PartialsEnabled() => Settings.Engine.Mode == EngineMode.Api ? Settings.Api.EnablePartials : Settings.Engine.EnablePartials;
+    /// <summary>Streaming models always run partial passes: they carry the audio upload, and the live text costs nothing extra.</summary>
+    private bool PartialsEnabled() => Settings.Engine.Mode == EngineMode.Api ? Settings.Api.EnablePartials || IsStreaming() : Settings.Engine.EnablePartials;
+
+    private bool IsStreaming() => Settings.Engine.Mode == EngineMode.Api && OpenAiRealtimeTranscriber.IsStreamingModel(Settings.Api.Model);
 
     public TranscriberFactory BuildTranscriberFactory()
     {
@@ -395,14 +400,17 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
             var api = Settings.Api;
             var preset = ApiProviderPreset.Find(api.Provider);
             string? key = GetApiKey(api.Provider);
-            return _ => Task.FromResult(new TranscriberSet(new OpenAiCompatibleTranscriber(new ApiTranscriberOptions
+            var options = new ApiTranscriberOptions
             {
                 BaseUrl = string.IsNullOrWhiteSpace(api.BaseUrl) ? preset.BaseUrl : api.BaseUrl,
                 Model = string.IsNullOrWhiteSpace(api.Model) ? preset.DefaultModel : api.Model,
                 ApiKey = key,
                 ProviderName = preset.Name,
                 EnablePartials = api.EnablePartials,
-            }, logger: _loggers.CreateLogger<OpenAiCompatibleTranscriber>())));
+                Language = EffectiveLanguage(),
+            };
+            // Streaming models connect here, so a wrong key or model shows up as a start error.
+            return async ct => new TranscriberSet(await ApiTranscribers.CreateAsync(options, _loggers.CreateLogger("ApiTranscriber"), ct));
         }
 
         var model = ModelStore.Resolve(engine.ModelId, Catalog)

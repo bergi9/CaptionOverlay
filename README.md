@@ -10,6 +10,7 @@ click-through overlay.
   such as *whisper-large-v3-turbo-german*.
 - GPU acceleration through Vulkan (NVIDIA / AMD / Intel with the normal driver), CPU fallback.
 - Silero VAD, partial (in-progress) captions, hallucination filter, SRT/TXT transcripts.
+- API mode can stream to OpenAI's realtime transcription models (e.g. `gpt-realtime-whisper`): text appears word by word.
 - English and German UI (follows the Windows display language; can be changed in Settings), light and dark mode.
 
 ## Why this exists

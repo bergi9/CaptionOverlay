@@ -23,6 +23,9 @@ public sealed record ApiTranscriberOptions
 
     public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(30);
 
+    /// <summary>Spoken language for streaming sessions (set once per session); null = detect.</summary>
+    public string? Language { get; init; }
+
     /// <summary>Maximum prompt length sent to the API (OpenAI caps prompts at ~224 tokens).</summary>
     public int MaxPromptChars { get; init; } = 200;
 }
@@ -31,7 +34,7 @@ public sealed record ApiTranscriberOptions
 /// POSTs WAV audio to <c>{baseUrl}/audio/transcriptions</c> (OpenAI, Groq, self-hosted whisper.cpp server...).
 /// Retries once on 5xx/timeouts. Never logs the API key or transcript text.
 /// </summary>
-public sealed class OpenAiCompatibleTranscriber : ITranscriber
+public sealed class OpenAiCompatibleTranscriber : IApiTranscriber
 {
     private readonly ApiTranscriberOptions _options;
     private readonly HttpClient _http;
@@ -355,4 +358,18 @@ public sealed record ApiProviderPreset(string Id, string Name, string BaseUrl, s
     public static IReadOnlyList<ApiProviderPreset> All { get; } = [OpenAi, Groq, Custom];
 
     public static ApiProviderPreset Find(string? id) => All.FirstOrDefault(p => p.Id == id) ?? Custom;
+}
+
+/// <summary>Creates the right API transcriber for a model: streaming (Realtime API) or per-utterance upload.</summary>
+public static class ApiTranscribers
+{
+    /// <summary>Whether a listed model can be offered at all: per-utterance or streaming.</summary>
+    public static bool IsUsableModel(string id) =>
+        OpenAiCompatibleTranscriber.IsTranscriptionModel(id) || OpenAiRealtimeTranscriber.IsStreamingModel(id);
+
+    /// <summary>Streaming models connect here, so a wrong key or model is reported before listening starts.</summary>
+    public static async Task<IApiTranscriber> CreateAsync(ApiTranscriberOptions options, ILogger? logger = null, CancellationToken ct = default) =>
+        OpenAiRealtimeTranscriber.IsStreamingModel(options.Model)
+            ? await OpenAiRealtimeTranscriber.ConnectAsync(options, logger, ct).ConfigureAwait(false)
+            : new OpenAiCompatibleTranscriber(options, logger: logger);
 }

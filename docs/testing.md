@@ -1,6 +1,6 @@
 # Testing notes
 
-Automated tests: `dotnet test --project tests/CaptionOverlay.Core.Tests` (160 tests; 139 without a model, via
+Automated tests: `dotnet test --project tests/CaptionOverlay.Core.Tests` (179 tests; 158 without a model, via
 `-- --filter-not-trait "Category=RequiresModel"` as in CI). Tests that need a Whisper model use the models installed in
 `%LOCALAPPDATA%\CaptionOverlay\models` (or `CAPTIONOVERLAY_TEST_MODEL` / `CAPTIONOVERLAY_TEST_MODEL_<ID>`) and skip
 themselves when they are absent. `CAPTIONOVERLAY_UPDATE_WER_BASELINE=1` writes the measured German WER to
@@ -54,10 +54,12 @@ Test machine for the ✅ items: Windows 11 Pro 26200, RTX 4090, 16 cores, 3840×
 - ✅ Benchmark reports RTF (wizard and CLI). ✅ Live model switch without restarting capture (`Transcriber_can_be_swapped_while_running`).
 - ⏳ Custom model import through the UI with a real non-GGML file (validation covered by unit test).
 - ✅ Fixed: custom-model validation pinned the whole process to the CPU runtime (ADR-016; found when the model tests ran on CPU in the full suite).
+- ✅ Fixed: two model loads at the same time crashed the process (access violation in whisper.cpp model loading, ADR-020); loads are serialized.
 
 ## M7 — API mode
 - ✅ Multipart request shape, 401 → fatal "API key rejected" and pipeline stops, 5xx retried once, 429 honours Retry-After, network errors transient, verbose_json → json fallback (stub handler tests). Key only in DPAPI `secrets.dat`, not in settings.json (test).
 - ✅ Real OpenAI key (`LiveApiTests`, opt-in): connection, wrong key → fatal "API key rejected" without echoing the key, English fixture, German clips and the German composite through the pipeline for whisper-1, gpt-4o-mini-transcribe, gpt-transcribe, gpt-4o-transcribe (results in ADR-018). Model list from `/models` in the API tab; realtime models filtered out.
+- ✅ Streaming (Realtime API, ADR-019): `RealtimeTranscriberTests` against a local fake of the protocol (partials stream only new audio, trailing silence kept, forced cut resent, cancel → clear without leaking text, reconnect after a drop, rejected session/key fatal); live: gpt-realtime-whisper and gpt-live-transcribe through the pipeline, final text 0.5–0.7 s after sentence end. ⏳ Real system audio in the app with a streaming model.
 - ⏳ Groq key; unplug network while running.
 
 ## M8 — Settings, wizard, export

@@ -55,15 +55,16 @@ public sealed class TrayIconManager : IDisposable
         menu.Items.Clear();
 
         menu.Items.Add(Item(Loc.Get(_app.IsListening ? "Tray_StopListening" : "Tray_StartListening"), async () => await _app.ToggleListeningAsync(), bold: true));
-        var pause = Item(Loc.Get("Tray_Pause"), _app.TogglePause);
-        pause.IsCheckable = true;
-        pause.IsChecked = _app.IsPaused;
+        // No checkable item in the top level: with the Fluent theme a check column there shifts every item right except
+        // the submenu headers (their template has no such column), so pause is a toggle with its own text instead.
+        var pause = Item(Loc.Get(_app.IsPaused ? "Tray_Resume" : "Tray_Pause"), _app.TogglePause);
         pause.IsEnabled = _app.IsListening;
         menu.Items.Add(pause);
         menu.Items.Add(Item(Loc.Get("Tray_EditOverlay"), _app.ToggleEditMode));
         menu.Items.Add(Item(Loc.Get("Tray_ClearOverlay"), _app.ClearOverlay));
         menu.Items.Add(new Separator());
         menu.Items.Add(BuildEngineMenu());
+        menu.Items.Add(BuildLanguageMenu());
         menu.Items.Add(new Separator());
         menu.Items.Add(Item(Loc.Get("Tray_CopyTranscript"), _app.CopyTranscript));
         var split = Item(Loc.Get("Tray_SplitTranscript"), _app.SplitTranscriptNow);
@@ -102,6 +103,33 @@ public sealed class TrayIconManager : IDisposable
         root.Items.Add(api);
         root.Items.Add(new Separator());
         root.Items.Add(Item(Loc.Get("Tray_ManageModels"), () => _app.ShowSettings("Models")));
+        return root;
+    }
+
+    /// <summary>Spoken language, switchable in two clicks (listening restarts with it); disabled when the model fixes it.</summary>
+    private MenuItem BuildLanguageMenu()
+    {
+        var languages = CaptionOverlay.App.Settings.SettingsViewModel.Languages;
+        string LabelOf(string code) => languages.FirstOrDefault(c => c.Value == code)?.Label ?? code;
+
+        if (_app.ModelForcedLanguage() is { } forced)
+        {
+            return new MenuItem { Header = Loc.Format("Tray_LanguageFixed", LabelOf(forced)), IsEnabled = false };
+        }
+        string current = _app.Settings.Engine.Language;
+        var root = new MenuItem { Header = Loc.Format("Tray_Language", LabelOf(current)) };
+        foreach (var choice in languages)
+        {
+            string code = choice.Value!;
+            var item = Item(choice.Label, () => _app.SetSpokenLanguage(code));
+            item.IsCheckable = true;
+            item.IsChecked = code == current;
+            root.Items.Add(item);
+            if (code == "auto")
+            {
+                root.Items.Add(new Separator());
+            }
+        }
         return root;
     }
 

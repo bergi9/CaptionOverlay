@@ -73,6 +73,7 @@ Test machine for the ✅ items: Windows 11 Pro 26200, RTX 4090, 16 cores, 3840×
 
 ## M8 — Settings, wizard, export
 - ✅ Transcript files (ADR-024): `TranscriptRecorderTests` cover the three split rules, continuous SRT times across a stop and start, Split now, no overwrite, format/folder change. ⏳ Tray "Split transcript now" clicked by hand.
+- ✅ Tray "Spoken language" submenu: Auto-detect plus the 24 languages of the Settings list, the current one checked; picking one saves it and restarts listening with it (same path as Settings); disabled with "(set by the model)" when the local model forces a language. Changes from the tray (language, engine) now refresh an open Settings window, which before could write the old engine values back on its next change. Build + `ResourceFileTests` (new texts in English and German). ⏳ Clicked by hand in the tray.
 - ✅ Wizard: language → engine (hardware hint) → model ready → Finish starts listening and opens edit mode.
 - ✅ All eight settings tabs render; SRT/TXT auto-saved and flushed per line.
 - ✅ Bug found and fixed: opening Settings wrote half-loaded values back (guard flag reset) → added `AppSettings.Sanitize`.

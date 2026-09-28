@@ -38,6 +38,7 @@ Details stehen im Protokollordner.</value></data>
   <data name="Tray_StartListening" xml:space="preserve"><value>Zuhören starten</value></data>
   <data name="Tray_StopListening" xml:space="preserve"><value>Zuhören beenden</value></data>
   <data name="Tray_Pause" xml:space="preserve"><value>Untertitel pausieren</value></data>
+  <data name="Tray_Resume" xml:space="preserve"><value>Untertitel fortsetzen</value></data>
   <data name="Tray_EditOverlay" xml:space="preserve"><value>Overlay verschieben</value></data>
   <data name="Tray_ClearOverlay" xml:space="preserve"><value>Overlay leeren</value></data>
   <data name="Tray_CopyTranscript" xml:space="preserve"><value>Transkript kopieren</value></data>
@@ -46,6 +47,8 @@ Details stehen im Protokollordner.</value></data>
   <data name="Tray_Quit" xml:space="preserve"><value>Beenden</value></data>
   <data name="Tray_Engine" xml:space="preserve"><value>Erkennung: {0}</value></data>
   <data name="Tray_Local" xml:space="preserve"><value>Lokal – {0}</value></data>
+  <data name="Tray_Language" xml:space="preserve"><value>Gesprochene Sprache: {0}</value></data>
+  <data name="Tray_LanguageFixed" xml:space="preserve"><value>Gesprochene Sprache: {0} (vom Modell festgelegt)</value></data>
   <data name="Tray_Api" xml:space="preserve"><value>API – {0}</value></data>
   <data name="Tray_NoModel" xml:space="preserve"><value>kein Modell</value></data>
   <data name="Tray_NoLocalModels" xml:space="preserve"><value>Keine lokalen Modelle heruntergeladen</value></data>

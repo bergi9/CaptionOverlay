@@ -226,6 +226,9 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         UpdateStatusText();
     }
 
+    /// <summary>Engine settings were changed outside the Settings window (tray): an open window re-reads them.</summary>
+    public event Action? EngineSettingsChanged;
+
     /// <summary>Switch engine quickly from the tray: local model id, or API mode.</summary>
     public void SwitchEngine(EngineMode mode, string? modelId = null)
     {
@@ -235,7 +238,24 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
             Settings.Engine.ModelId = modelId;
         }
         ApplySettings(SettingsSection.Engine);
+        EngineSettingsChanged?.Invoke();
     }
+
+    /// <summary>Switch the spoken language quickly from the tray ("auto" or an ISO code); listening restarts with it.</summary>
+    public void SetSpokenLanguage(string language)
+    {
+        if (Settings.Engine.Language == language)
+        {
+            return;
+        }
+        Settings.Engine.Language = language;
+        ApplySettings(SettingsSection.Engine);
+        EngineSettingsChanged?.Invoke();
+    }
+
+    /// <summary>The language the current local model is fixed to (German fine-tunes), or null.</summary>
+    public string? ModelForcedLanguage() =>
+        Settings.Engine.Mode == EngineMode.Local ? ModelStore.Resolve(Settings.Engine.ModelId, Catalog)?.ForceLanguage : null;
 
     // ───────────────────────────── Settings ─────────────────────────────
 

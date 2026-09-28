@@ -72,6 +72,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Models = new ModelManagerViewModel(app);
         Models.InstalledChanged += RefreshModelChoices;
         _app.PropertyChanged += OnAppChanged;
+        _app.EngineSettingsChanged += OnEngineChangedOutside;
         Loc.CultureChanged += OnCultureChanged;
 
         FontFamilies = [.. Fonts.SystemFontFamilies.Select(f => f.Source).Order(StringComparer.CurrentCultureIgnoreCase)];
@@ -688,6 +689,22 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void OpenReleasePage() => AppController.OpenUrl(_app.AvailableUpdate?.Url ?? $"https://github.com/{UpdateChecker.Repository}/releases");
 
+    /// <summary>
+    /// The tray switched engine or language: show it, and keep a later write-back from this window from restoring the
+    /// old values. Nothing is applied here (the tray already did).
+    /// </summary>
+    private void OnEngineChangedOutside()
+    {
+        bool wasLoading = _loading;
+        _loading = true;
+        EngineMode = _s.Engine.Mode.ToString();
+        EngineModelId = _s.Engine.ModelId;
+        EngineLanguage = _s.Engine.Language;
+        _loading = wasLoading;
+        OnPropertyChanged(nameof(IsLocalMode));
+        OnPropertyChanged(nameof(IsApiMode));
+    }
+
     private void OnAppChanged(object? sender, PropertyChangedEventArgs e)
     {
         switch (e.PropertyName)
@@ -731,6 +748,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Loc.CultureChanged -= OnCultureChanged;
         _modelsCts?.Cancel();
         _app.PropertyChanged -= OnAppChanged;
+        _app.EngineSettingsChanged -= OnEngineChangedOutside;
         Models.InstalledChanged -= RefreshModelChoices;
         Models.Dispose();
     }

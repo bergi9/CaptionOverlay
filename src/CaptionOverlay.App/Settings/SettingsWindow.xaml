@@ -252,7 +252,9 @@
                         <CheckBox Content="{l:Loc Api_Partials}" IsChecked="{Binding ApiEnablePartials}" Margin="0,12,0,0"
                                   Visibility="{Binding IsUploadModel, Converter={StaticResource BoolToVis}}" />
                         <TextBlock Style="{StaticResource Hint}" Margin="0,12,0,0" Text="{l:Loc Api_StreamingHint}"
-                                   Visibility="{Binding IsStreamingModel, Converter={StaticResource BoolToVis}}" />
+                                   Visibility="{Binding IsHostedStreamingModel, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,12,0,0" Text="{l:Loc Api_StreamingServerHint}"
+                                   Visibility="{Binding IsSelfHostedStreaming, Converter={StaticResource BoolToVis}}" />
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

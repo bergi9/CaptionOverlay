@@ -216,6 +216,7 @@ Details stehen im Protokollordner.</value></data>
   <data name="Api_ModelStreaming" xml:space="preserve"><value>{0} (Streaming)</value></data>
   <data name="Api_ModelsHint" xml:space="preserve"><value>Aufgeführt sind nur Modelle, die für Untertitel funktionieren. Streaming-Modelle laden den Ton schon während des Sprechens hoch und zeigen den Text Wort für Wort; die anderen senden jeden fertigen Satz.</value></data>
   <data name="Api_StreamingHint" xml:space="preserve"><value>Streaming-Modell: Der Text erscheint Wort für Wort, während gesprochen wird, ohne Aufpreis. Abgerechnet wird pro Minute gesendeter Sprache.</value></data>
+  <data name="Api_StreamingServerHint" xml:space="preserve"><value>Streaming-Server: Der Text erscheint, während gesprochen wird. Das Modell legen die Einstellungen des Servers fest; wo ein Satz endet, entscheidet weiterhin die App.</value></data>
   <data name="Api_Partials" xml:space="preserve"><value>Auch vorläufige Ergebnisse senden – erhöht die Kosten etwa um das 5- bis 10-Fache</value></data>
 
   <!-- Overlay tab -->

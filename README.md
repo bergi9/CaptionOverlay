@@ -2,7 +2,8 @@
 
 Live captions for **everything your Windows PC plays**: system audio is captured via WASAPI loopback,
 transcribed with **OpenAI Whisper** (locally through whisper.cpp / Whisper.net, or via an
-OpenAI-compatible API such as OpenAI, Groq or a self-hosted [Speaches](https://speaches.ai) server) and shown in a transparent, always-on-top,
+OpenAI-compatible API such as OpenAI, Groq or a self-hosted [Speaches](https://speaches.ai) server, or streamed live to a
+self-hosted [WhisperLiveKit](https://github.com/QuentinFuxa/WhisperLiveKit) server) and shown in a transparent, always-on-top,
 click-through overlay.
 
 - Portable: download the zip from Releases, extract, run. No .NET or other installs, no admin rights.
@@ -11,7 +12,7 @@ click-through overlay.
 - GPU acceleration through Vulkan (NVIDIA / AMD / Intel with the normal driver), CPU fallback.
 - Silero VAD, partial (in-progress) captions, hallucination filter, SRT/TXT transcripts.
 - Optional sound tags such as [Music] or (Applause) in the captions, for deaf and hard-of-hearing viewers.
-- API mode can stream to OpenAI's realtime transcription models (e.g. `gpt-realtime-whisper`): text appears word by word.
+- API mode can stream to OpenAI's realtime transcription models (e.g. `gpt-realtime-whisper`) or a self-hosted WhisperLiveKit server: text appears while someone speaks.
 - English and German UI (follows the Windows display language; can be changed in Settings), light and dark mode.
 
 ## Why this exists

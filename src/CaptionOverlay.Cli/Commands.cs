@@ -23,14 +23,14 @@ public static class Commands
                                                 Record system audio (loopback) to a 16 kHz mono WAV
           segment <in.wav> [--no-vad]           Print utterance boundaries found by VAD + segmenter
           live [--model <id|path>] [--lang de] [--wav <file> [--realtime]] [--partial-model <id|path>]
-               [--api groq|openai|speaches|custom --api-key <key> --api-model <m> --api-url <url>]
+               [--api groq|openai|speaches|whisperlivekit|custom --api-key <key> --api-model <m> --api-url <url>]
                [--no-vad] [--no-partials] [--sound-tags] [--cpu] [--srt <file>] [--normal-priority]
                                                 Live captions from loopback (or a WAV file) to the console
           bench --model <id|path> [--cpu]       Benchmark a model on the bundled fixture (real-time factor)
           models                                List catalog models and what is installed
           download <id>                         Download a catalog model (resumable, SHA-256 verified)
           hardware                              Show detected hardware and the recommended model
-          api-models --api openai|groq|speaches|custom [--api-key <key>] [--api-url <url>] [--all]
+          api-models --api openai|groq|speaches|whisperlivekit|custom [--api-key <key>] [--api-url <url>] [--all]
                                                 List the provider's transcription models (--all: every model)
           fixtures fetch-de [--out tests/fixtures/de] [--revision <hash>] [--force] [--write-composite <path.wav>]
                                                 Download the German FLEURS test clips (pinned revision)
@@ -180,6 +180,7 @@ public static class Commands
             Model = args.Get("api-model") ?? preset.DefaultModel,
             ApiKey = ApiKey(args, preset),
             ProviderName = preset.Name,
+            ProviderId = preset.Id,
             EnablePartials = partials,
             Language = language,
         }, logger, ct);
@@ -209,7 +210,7 @@ public static class Commands
         var gpu = args.Has("cpu") ? GpuPreference.CpuOnly : GpuPreference.Auto;
         bool api = args.Has("api");
         bool partials = !args.Has("no-partials");
-        bool streaming = api && OpenAiRealtimeTranscriber.IsStreamingModel(args.Get("api-model"));
+        bool streaming = api && ApiTranscribers.IsStreaming(args.Get("api"), args.Get("api-model"));
         var catalog = ModelCatalog.LoadBundled();
         var store = new ModelStore();
 

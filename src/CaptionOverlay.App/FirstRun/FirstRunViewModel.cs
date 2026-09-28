@@ -241,14 +241,17 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
         var preset = ApiProviderPreset.Find(ApiProvider);
         try
         {
-            await using var t = new OpenAiCompatibleTranscriber(new ApiTranscriberOptions
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            // Streaming providers connect in CreateAsync; that handshake is the test.
+            await using var t = await ApiTranscribers.CreateAsync(new ApiTranscriberOptions
             {
                 BaseUrl = EffectiveBaseUrl(preset),
                 Model = preset.DefaultModel,
                 ApiKey = _app.GetApiKey(preset.Id),
                 ProviderName = preset.Name,
+                ProviderId = preset.Id,
             });
-            var latency = await t.TestConnectionAsync(CancellationToken.None);
+            var latency = t is IStreamingTranscriber ? sw.Elapsed : await t.TestConnectionAsync(CancellationToken.None);
             ApiResult = Loc.Format("Api_Connected", latency.TotalMilliseconds);
         }
         catch (Exception ex)

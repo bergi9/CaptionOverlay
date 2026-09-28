@@ -408,7 +408,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
     /// <summary>Streaming models always run partial passes: they carry the audio upload, and the live text costs nothing extra.</summary>
     private bool PartialsEnabled() => Settings.Engine.Mode == EngineMode.Api ? Settings.Api.EnablePartials || IsStreaming() : Settings.Engine.EnablePartials;
 
-    private bool IsStreaming() => Settings.Engine.Mode == EngineMode.Api && OpenAiRealtimeTranscriber.IsStreamingModel(Settings.Api.Model);
+    private bool IsStreaming() => Settings.Engine.Mode == EngineMode.Api && ApiTranscribers.IsStreaming(Settings.Api.Provider, Settings.Api.Model);
 
     public TranscriberFactory BuildTranscriberFactory()
     {
@@ -425,6 +425,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
                 Model = string.IsNullOrWhiteSpace(api.Model) ? preset.DefaultModel : api.Model,
                 ApiKey = key,
                 ProviderName = preset.Name,
+                ProviderId = preset.Id,
                 EnablePartials = api.EnablePartials,
                 Language = EffectiveLanguage(),
             };

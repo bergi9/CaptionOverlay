@@ -220,6 +220,7 @@ Details are in the log folder.</value></data>
   <data name="Api_ModelStreaming" xml:space="preserve"><value>{0} (streaming)</value></data>
   <data name="Api_ModelsHint" xml:space="preserve"><value>Only models that work for captions are listed. Streaming models upload the audio while someone speaks and show the text word by word; the others send each finished sentence.</value></data>
   <data name="Api_StreamingHint" xml:space="preserve"><value>Streaming model: the text appears word by word while someone speaks, at no extra cost. Billed per minute of speech sent.</value></data>
+  <data name="Api_StreamingServerHint" xml:space="preserve"><value>Streaming server: the text appears while someone speaks. The server's own settings decide the model; the app still decides where each sentence ends.</value></data>
   <data name="Api_Partials" xml:space="preserve"><value>Also send partial (in-progress) results — increases cost roughly 5–10×</value></data>
 
   <!-- Overlay tab -->

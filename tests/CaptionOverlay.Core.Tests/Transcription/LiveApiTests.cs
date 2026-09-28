@@ -15,7 +15,7 @@ namespace CaptionOverlay.Core.Tests.Transcription;
 
 /// <summary>
 /// Real calls to a transcription API. Opt-in only (they cost money): set <c>CAPTIONOVERLAY_TEST_API</c> to a provider id
-/// (<c>openai</c>, <c>groq</c>, <c>speaches</c>). The key comes from <c>CAPTIONOVERLAY_TEST_API_KEY</c> or, if unset, from the key saved in the
+/// (<c>openai</c>, <c>groq</c>, <c>speaches</c>, <c>whisperlivekit</c>). The key comes from <c>CAPTIONOVERLAY_TEST_API_KEY</c> or, if unset, from the key saved in the
 /// app (Settings → API, DPAPI-encrypted for the current Windows user), so it never has to appear on a command line.
 /// <c>CAPTIONOVERLAY_TEST_API_MODEL</c> overrides the provider's default model, <c>CAPTIONOVERLAY_TEST_API_URL</c> the base URL
 /// (needed for a self-hosted <c>speaches</c> server).
@@ -57,6 +57,7 @@ public class LiveApiTests
             Model = c.Model,
             ApiKey = key ?? c.Key,
             ProviderName = c.Preset.Name,
+            ProviderId = c.Preset.Id,
             Language = language,
             StreamingDelay = Environment.GetEnvironmentVariable("CAPTIONOVERLAY_TEST_API_DELAY"),
         }, ct: Ct);
@@ -122,7 +123,7 @@ public class LiveApiTests
     {
         var c = Require();
         var composite = GermanFixtures.Composite;
-        bool streaming = OpenAiRealtimeTranscriber.IsStreamingModel(c.Model);
+        bool streaming = ApiTranscribers.IsStreaming(c.Preset.Id, c.Model);
         var stereo = composite.ToStereo48k();
         var lines = new List<CaptionLine>();
         var pipeline = new CaptionPipeline();

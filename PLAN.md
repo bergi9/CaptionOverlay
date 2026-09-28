@@ -224,6 +224,7 @@ public record TranscriptionResult(
   - OpenAI: base `https://api.openai.com/v1`, model `whisper-1` (newer transcription models may exist)
   - Groq: base `https://api.groq.com/openai/v1`, model `whisper-large-v3-turbo`
   - Speaches (self-hosted): base entered by the user (default `http://localhost:8000/v1`), model `Systran/faster-whisper-small`; models listed by their `task` (ADR-025)
+  - WhisperLiveKit (self-hosted, streaming): base entered by the user (default `http://localhost:8000/v1`), WebSocket `/asr`, one session per utterance (ADR-028)
   - Custom: any base URL (e.g., a self-hosted whisper.cpp server)
 - **Finals only** by default (partials would multiply cost ~5-10×). Advanced toggle to enable partials with a minimum interval of 1.5 s.
 - Resilience: timeout 30 s; retry once on 5xx/timeout with jitter; on 401/403 stop the pipeline and show "API key rejected"; on 429 back off and surface a status message.

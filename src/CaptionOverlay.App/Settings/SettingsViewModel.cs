@@ -260,7 +260,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public bool IsSelfHostedProvider => ApiProviderPreset.Find(ApiProvider).SelfHosted;
 
     /// <summary>Streaming models always show live text (no extra cost per update), so the partials option does not apply.</summary>
-    public bool IsStreamingModel => OpenAiRealtimeTranscriber.IsStreamingModel(ApiModel);
+    public bool IsStreamingModel => ApiTranscribers.IsStreaming(ApiProvider, ApiModel);
+
+    /// <summary>OpenAI's streaming models (billed per minute); a self-hosted streaming server gets its own hint.</summary>
+    public bool IsHostedStreamingModel => IsStreamingModel && !IsSelfHostedProvider;
+
+    public bool IsSelfHostedStreaming => IsStreamingModel && IsSelfHostedProvider;
 
     public bool IsUploadModel => !IsStreamingModel;
 
@@ -349,10 +354,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         {
             _ = LoadApiModelsAsync(); // another server has other models
         }
-        if (e.PropertyName is nameof(ApiModel))
+        if (e.PropertyName is nameof(ApiModel) or nameof(ApiProvider))
         {
             OnPropertyChanged(nameof(IsStreamingModel));
             OnPropertyChanged(nameof(IsUploadModel));
+            OnPropertyChanged(nameof(IsHostedStreamingModel));
+            OnPropertyChanged(nameof(IsSelfHostedStreaming));
         }
         if (e.PropertyName is nameof(EngineMode))
         {
@@ -496,9 +503,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                     Model = preset.DefaultModel,
                     ApiKey = key,
                     ProviderName = preset.Name,
+                    ProviderId = preset.Id,
                 });
                 var all = await t.ListModelsAsync(cts.Token);
-                models = [.. all.Where(ApiTranscribers.IsUsableModel).Select(m => m.Id)];
+                // A streaming server reports the one model it runs; the name filter is for OpenAI-style lists.
+                models = [.. all.Where(m => preset.Streaming || ApiTranscribers.IsUsableModel(m)).Select(m => m.Id)];
                 ModelListStatus = models.Count == 0 ? Loc.Get("Api_ModelsNone") : null;
             }
             catch (OperationCanceledException) when (cts.IsCancellationRequested)
@@ -554,8 +563,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                 Model = string.IsNullOrWhiteSpace(ApiModel) ? preset.DefaultModel : ApiModel,
                 ApiKey = _app.GetApiKey(ApiProvider ?? ""),
                 ProviderName = preset.Name,
+                ProviderId = preset.Id,
             });
-            var latency = t is OpenAiRealtimeTranscriber ? sw.Elapsed : await t.TestConnectionAsync(CancellationToken.None);
+            var latency = t is IStreamingTranscriber ? sw.Elapsed : await t.TestConnectionAsync(CancellationToken.None);
             ApiTestResult = Loc.Format("Api_Connected", latency.TotalMilliseconds);
         }
         catch (Exception ex)

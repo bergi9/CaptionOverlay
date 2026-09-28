@@ -250,9 +250,13 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     public bool IsApiMode => !IsLocalMode;
 
-    public bool IsCustomProvider => ApiProvider == ApiProviderPreset.Custom.Id;
+    /// <summary>The model is typed (Custom); the other providers offer their <c>/models</c> list.</summary>
+    public bool IsCustomProvider => !ApiProviderPreset.Find(ApiProvider).ListsModels;
 
     public bool IsPresetProvider => !IsCustomProvider;
+
+    /// <summary>Speaches and Custom run on the user's server, so the URL field is explained.</summary>
+    public bool IsSelfHostedProvider => ApiProviderPreset.Find(ApiProvider).SelfHosted;
 
     /// <summary>Streaming models always show live text (no extra cost per update), so the partials option does not apply.</summary>
     public bool IsStreamingModel => OpenAiRealtimeTranscriber.IsStreamingModel(ApiModel);
@@ -338,6 +342,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         if (e.PropertyName == nameof(ApiProvider))
         {
             OnProviderChanged();
+        }
+        else if (e.PropertyName == nameof(ApiBaseUrl) && IsPresetProvider)
+        {
+            _ = LoadApiModelsAsync(); // another server has other models
         }
         if (e.PropertyName is nameof(ApiModel))
         {
@@ -438,6 +446,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
         OnPropertyChanged(nameof(IsCustomProvider));
         OnPropertyChanged(nameof(IsPresetProvider));
+        OnPropertyChanged(nameof(IsSelfHostedProvider));
         OnPropertyChanged(nameof(ApiKeyForDisplay));
         ApiTestResult = null;
         _ = LoadApiModelsAsync();
@@ -455,8 +464,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     /// <summary>
     /// Loads the provider's model list with the saved key and keeps only models usable for captions
-    /// (<see cref="OpenAiCompatibleTranscriber.IsTranscriptionModel"/>). Without a key or connection the list holds the
-    /// saved model and the provider default, so there is always a valid choice.
+    /// (<see cref="ApiTranscribers.IsUsableModel(ApiModelInfo)"/>). Without a key or connection the list holds the
+    /// saved model and the provider default, so there is always a valid choice. A self-hosted server may run without a key.
     /// </summary>
     private async Task LoadApiModelsAsync()
     {
@@ -465,11 +474,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         var preset = ApiProviderPreset.Find(ApiProvider);
         string? key = _app.GetApiKey(preset.Id);
         IReadOnlyList<string>? models = null;
-        if (preset == ApiProviderPreset.Custom)
+        if (!preset.ListsModels)
         {
             ModelListStatus = null; // free text: self-hosted servers often have no model list
         }
-        else if (string.IsNullOrEmpty(key))
+        else if (string.IsNullOrEmpty(key) && !preset.SelfHosted)
         {
             ModelListStatus = Loc.Get("Api_ModelsNeedKey");
         }
@@ -486,7 +495,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                     ProviderName = preset.Name,
                 });
                 var all = await t.ListModelsAsync(cts.Token);
-                models = [.. all.Where(ApiTranscribers.IsUsableModel)];
+                models = [.. all.Where(ApiTranscribers.IsUsableModel).Select(m => m.Id)];
                 ModelListStatus = models.Count == 0 ? Loc.Get("Api_ModelsNone") : null;
             }
             catch (OperationCanceledException) when (cts.IsCancellationRequested)

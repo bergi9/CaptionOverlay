@@ -23,14 +23,14 @@ public static class Commands
                                                 Record system audio (loopback) to a 16 kHz mono WAV
           segment <in.wav> [--no-vad]           Print utterance boundaries found by VAD + segmenter
           live [--model <id|path>] [--lang de] [--wav <file> [--realtime]] [--partial-model <id|path>]
-               [--api groq|openai|custom --api-key <key> --api-model <m> --api-url <url>]
+               [--api groq|openai|speaches|custom --api-key <key> --api-model <m> --api-url <url>]
                [--no-vad] [--no-partials] [--cpu] [--srt <file>] [--normal-priority]
                                                 Live captions from loopback (or a WAV file) to the console
           bench --model <id|path> [--cpu]       Benchmark a model on the bundled fixture (real-time factor)
           models                                List catalog models and what is installed
           download <id>                         Download a catalog model (resumable, SHA-256 verified)
           hardware                              Show detected hardware and the recommended model
-          api-models --api openai|groq|custom [--api-key <key>] [--api-url <url>] [--all]
+          api-models --api openai|groq|speaches|custom [--api-key <key>] [--api-url <url>] [--all]
                                                 List the provider's transcription models (--all: every model)
           fixtures fetch-de [--out tests/fixtures/de] [--revision <hash>] [--force] [--write-composite <path.wav>]
                                                 Download the German FLEURS test clips (pinned revision)
@@ -194,10 +194,10 @@ public static class Commands
             ApiKey = ApiKey(args, ApiProviderPreset.Find(args.Get("api"))),
         });
         var models = await t.ListModelsAsync(ct);
-        foreach (string id in models.Where(m => args.Has("all") || ApiTranscribers.IsUsableModel(m)))
+        foreach (var m in models.Where(m => args.Has("all") || ApiTranscribers.IsUsableModel(m)))
         {
-            Console.WriteLine(OpenAiRealtimeTranscriber.IsStreamingModel(id) ? $"{id}  (streaming)"
-                : args.Has("all") && OpenAiCompatibleTranscriber.IsTranscriptionModel(id) ? $"{id}  (transcription)" : id);
+            Console.WriteLine(OpenAiRealtimeTranscriber.IsStreamingModel(m.Id) ? $"{m.Id}  (streaming)"
+                : args.Has("all") && ApiTranscribers.IsUsableModel(m) ? $"{m.Id}  (transcription)" : m.Id);
         }
         return 0;
     }

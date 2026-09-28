@@ -15,14 +15,18 @@ namespace CaptionOverlay.Core.Tests.Transcription;
 
 /// <summary>
 /// Real calls to a transcription API. Opt-in only (they cost money): set <c>CAPTIONOVERLAY_TEST_API</c> to a provider id
-/// (<c>openai</c>, <c>groq</c>). The key comes from <c>CAPTIONOVERLAY_TEST_API_KEY</c> or, if unset, from the key saved in the
+/// (<c>openai</c>, <c>groq</c>, <c>speaches</c>). The key comes from <c>CAPTIONOVERLAY_TEST_API_KEY</c> or, if unset, from the key saved in the
 /// app (Settings → API, DPAPI-encrypted for the current Windows user), so it never has to appear on a command line.
-/// <c>CAPTIONOVERLAY_TEST_API_MODEL</c> overrides the provider's default model.
+/// <c>CAPTIONOVERLAY_TEST_API_MODEL</c> overrides the provider's default model, <c>CAPTIONOVERLAY_TEST_API_URL</c> the base URL
+/// (needed for a self-hosted <c>speaches</c> server).
 /// </summary>
 [Trait("Category", "RequiresApiKey")]
 public class LiveApiTests
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
+
+    private static string BaseUrl(ApiProviderPreset preset) =>
+        Environment.GetEnvironmentVariable("CAPTIONOVERLAY_TEST_API_URL") is { Length: > 0 } url ? url.Trim() : preset.BaseUrl;
 
     private static (ApiProviderPreset Preset, string Key, string Model)? Configured()
     {
@@ -49,7 +53,7 @@ public class LiveApiTests
     private static Task<IApiTranscriber> CreateAsync((ApiProviderPreset Preset, string Key, string Model) c, string? key = null, string? language = null) =>
         ApiTranscribers.CreateAsync(new ApiTranscriberOptions
         {
-            BaseUrl = c.Preset.BaseUrl,
+            BaseUrl = BaseUrl(c.Preset),
             Model = c.Model,
             ApiKey = key ?? c.Key,
             ProviderName = c.Preset.Name,

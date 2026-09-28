@@ -2,7 +2,7 @@
 
 Live captions for **everything your Windows PC plays**: system audio is captured via WASAPI loopback,
 transcribed with **OpenAI Whisper** (locally through whisper.cpp / Whisper.net, or via an
-OpenAI-compatible API such as OpenAI or Groq) and shown in a transparent, always-on-top,
+OpenAI-compatible API such as OpenAI, Groq or a self-hosted [Speaches](https://speaches.ai) server) and shown in a transparent, always-on-top,
 click-through overlay.
 
 - Portable: download the zip from Releases, extract, run. No .NET or other installs, no admin rights.

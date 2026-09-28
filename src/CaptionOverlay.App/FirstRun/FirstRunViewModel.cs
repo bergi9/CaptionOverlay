@@ -63,7 +63,14 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
     public partial string? SelectedModelId { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSelfHostedProvider))]
     public partial string? ApiProvider { get; set; }
+
+    /// <summary>Server address for self-hosted providers (Speaches, Custom); the hosted ones use their fixed URL.</summary>
+    [ObservableProperty]
+    public partial string ApiBaseUrl { get; set; } = "";
+
+    public bool IsSelfHostedProvider => ApiProviderPreset.Find(ApiProvider).SelfHosted;
 
     [ObservableProperty]
     public partial string? ApiResult { get; set; }
@@ -86,6 +93,11 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
     public string NextLabel => Loc.Get(Step == 2 ? "Wizard_Finish" : "Wizard_Next");
 
     partial void OnLanguageChanged(string? value) => UpdateCandidates();
+
+    partial void OnApiProviderChanged(string? value) => ApiBaseUrl = ApiProviderPreset.Find(value).BaseUrl;
+
+    private string EffectiveBaseUrl(ApiProviderPreset preset) =>
+        preset.SelfHosted && !string.IsNullOrWhiteSpace(ApiBaseUrl) ? ApiBaseUrl.Trim() : preset.BaseUrl;
 
     public void SetApiKey(string key) => _app.SetApiKey(ApiProvider ?? "", string.IsNullOrWhiteSpace(key) ? null : key.Trim());
 
@@ -161,7 +173,7 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
         {
             var preset = ApiProviderPreset.Find(ApiProvider);
             _app.Settings.Api.Provider = preset.Id;
-            _app.Settings.Api.BaseUrl = preset.BaseUrl;
+            _app.Settings.Api.BaseUrl = EffectiveBaseUrl(preset);
             _app.Settings.Api.Model = preset.DefaultModel;
         }
         _app.SaveNow();
@@ -231,7 +243,7 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
         {
             await using var t = new OpenAiCompatibleTranscriber(new ApiTranscriberOptions
             {
-                BaseUrl = preset.BaseUrl,
+                BaseUrl = EffectiveBaseUrl(preset),
                 Model = preset.DefaultModel,
                 ApiKey = _app.GetApiKey(preset.Id),
                 ProviderName = preset.Name,

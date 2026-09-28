@@ -123,10 +123,43 @@ public class OpenAiCompatibleTranscriberTests
         await using var t = Create(handler);
         var models = await t.ListModelsAsync(TestContext.Current.CancellationToken);
 
-        models.Should().Equal("gpt-4o-mini-transcribe", "gpt-realtime-whisper", "tts-1", "whisper-1");
+        models.Select(m => m.Id).Should().Equal("gpt-4o-mini-transcribe", "gpt-realtime-whisper", "tts-1", "whisper-1");
+        models.Should().OnlyContain(m => m.Task == null);
         handler.Requests[0].Method.Should().Be(HttpMethod.Get);
         handler.Requests[0].RequestUri!.ToString().Should().Be("https://api.example.com/v1/models");
         handler.Requests[0].Headers.Authorization!.Parameter.Should().Be("sk-test");
+    }
+
+    [Fact]
+    public async Task Speaches_models_are_filtered_by_their_task_not_their_name()
+    {
+        // Shape of Speaches' GET /v1/models (v0.8.2): speech recognition and text-to-speech models in one list.
+        var handler = new StubHandler((_, _, _) => Json(HttpStatusCode.OK,
+            """
+            {"object":"list","data":[
+              {"id":"Systran/faster-whisper-small","created":0,"object":"model","owned_by":"Systran","language":["en","de"],"task":"automatic-speech-recognition"},
+              {"id":"Systran/faster-distil-whisper-small.en","created":0,"object":"model","owned_by":"Systran","language":["en"],"task":"automatic-speech-recognition"},
+              {"id":"nvidia/parakeet-tdt-0.6b-v3","created":0,"object":"model","owned_by":"nvidia","task":"automatic-speech-recognition"},
+              {"id":"speaches-ai/Kokoro-82M-v1.0-ONNX","created":0,"object":"model","owned_by":"speaches-ai","task":"text-to-speech"},
+              {"id":"rhasspy/piper-voices-whisper-demo","created":0,"object":"model","owned_by":"rhasspy","task":"text-to-speech"}
+            ]}
+            """));
+        await using var t = Create(handler);
+        var models = await t.ListModelsAsync(TestContext.Current.CancellationToken);
+
+        models.Where(ApiTranscribers.IsUsableModel).Select(m => m.Id).Should().Equal(
+            "Systran/faster-distil-whisper-small.en", "Systran/faster-whisper-small", "nvidia/parakeet-tdt-0.6b-v3");
+    }
+
+    [Fact]
+    public void Speaches_is_a_self_hosted_provider_with_a_model_list()
+    {
+        var speaches = ApiProviderPreset.Find("speaches");
+        speaches.Should().BeSameAs(ApiProviderPreset.Speaches);
+        speaches.SelfHosted.Should().BeTrue();
+        speaches.ListsModels.Should().BeTrue();
+        ApiProviderPreset.Custom.ListsModels.Should().BeFalse();
+        ApiProviderPreset.OpenAi.SelfHosted.Should().BeFalse();
     }
 
     [Fact]

@@ -202,6 +202,7 @@ Details are in the log folder.</value></data>
   <data name="Api_Provider" xml:space="preserve"><value>Provider</value></data>
   <data name="Api_CustomProvider" xml:space="preserve"><value>Custom</value></data>
   <data name="Api_BaseUrl" xml:space="preserve"><value>Base URL</value></data>
+  <data name="Api_SelfHostedHint" xml:space="preserve"><value>Your own server: enter its address including /v1, e.g. http://192.168.1.10:8000/v1 for Speaches. A key is only needed if the server requires one.</value></data>
   <data name="Api_Model" xml:space="preserve"><value>Model</value></data>
   <data name="Api_Key" xml:space="preserve"><value>API key</value></data>
   <data name="Api_SaveKey" xml:space="preserve"><value>Save key</value></data>

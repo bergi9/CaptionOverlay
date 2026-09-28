@@ -37,7 +37,7 @@ public sealed record ApiTranscriberOptions
 }
 
 /// <summary>
-/// POSTs WAV audio to <c>{baseUrl}/audio/transcriptions</c> (OpenAI, Groq, self-hosted whisper.cpp server...).
+/// POSTs WAV audio to <c>{baseUrl}/audio/transcriptions</c> (OpenAI, Groq, Speaches, self-hosted whisper.cpp server...).
 /// Retries once on 5xx/timeouts. Never logs the API key or transcript text.
 /// </summary>
 public sealed class OpenAiCompatibleTranscriber : IApiTranscriber
@@ -101,9 +101,10 @@ public sealed class OpenAiCompatibleTranscriber : IApiTranscriber
     }
 
     /// <summary>
-    /// All model ids from <c>GET {baseUrl}/models</c>, sorted; filter with <see cref="IsTranscriptionModel"/>. Throws <see cref="TranscriptionException"/> (fatal for a rejected key) if the list cannot be read.
+    /// All models from <c>GET {baseUrl}/models</c>, sorted by id; filter with <see cref="ApiTranscribers.IsUsableModel(ApiModelInfo)"/>.
+    /// Throws <see cref="TranscriptionException"/> (fatal for a rejected key) if the list cannot be read.
     /// </summary>
-    public async Task<IReadOnlyList<string>> ListModelsAsync(CancellationToken ct)
+    public async Task<IReadOnlyList<ApiModelInfo>> ListModelsAsync(CancellationToken ct)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(TimeSpan.FromSeconds(15));
@@ -130,10 +131,12 @@ public sealed class OpenAiCompatibleTranscriber : IApiTranscriber
                 throw new TranscriptionException(Loc.Get("Api_UnexpectedResponse"));
             }
             return [.. data.EnumerateArray()
-                .Select(m => m.TryGetProperty("id", out var id) ? id.GetString() : null)
-                .OfType<string>()
-                .Distinct(StringComparer.Ordinal)
-                .Order(StringComparer.Ordinal)];
+                .Where(m => m.ValueKind == JsonValueKind.Object && m.TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.String)
+                .Select(m => new ApiModelInfo(
+                    m.GetProperty("id").GetString()!,
+                    m.TryGetProperty("task", out var task) && task.ValueKind == JsonValueKind.String ? task.GetString() : null))
+                .DistinctBy(m => m.Id, StringComparer.Ordinal)
+                .OrderBy(m => m.Id, StringComparer.Ordinal)];
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
@@ -355,13 +358,29 @@ public sealed class OpenAiCompatibleTranscriber : IApiTranscriber
 [JsonSerializable(typeof(OpenAiCompatibleTranscriber.ApiResponse))]
 internal sealed partial class ApiJsonContext : JsonSerializerContext;
 
+/// <summary>A model from a provider's <c>/models</c> list. <paramref name="Task"/> is Speaches' extra field ("automatic-speech-recognition", "text-to-speech"); OpenAI and Groq send none.</summary>
+public sealed record ApiModelInfo(string Id, string? Task = null);
+
 public sealed record ApiProviderPreset(string Id, string Name, string BaseUrl, string DefaultModel)
 {
     public static readonly ApiProviderPreset OpenAi = new("openai", "OpenAI", "https://api.openai.com/v1", "whisper-1");
     public static readonly ApiProviderPreset Groq = new("groq", "Groq", "https://api.groq.com/openai/v1", "whisper-large-v3-turbo");
-    public static readonly ApiProviderPreset Custom = new("custom", "Custom", "http://localhost:8080/v1", "whisper-1");
 
-    public static IReadOnlyList<ApiProviderPreset> All { get; } = [OpenAi, Groq, Custom];
+    /// <summary>
+    /// Self-hosted Speaches (faster-whisper). Per-utterance upload, not its Realtime API: that one only transcribes the whole
+    /// buffer at the commit (no deltas) after resampling our audio from 24 kHz, see ADR-025.
+    /// </summary>
+    public static readonly ApiProviderPreset Speaches = new("speaches", "Speaches", "http://localhost:8000/v1", "Systran/faster-whisper-small") { SelfHosted = true };
+
+    public static readonly ApiProviderPreset Custom = new("custom", "Custom", "http://localhost:8080/v1", "whisper-1") { SelfHosted = true, ListsModels = false };
+
+    public static IReadOnlyList<ApiProviderPreset> All { get; } = [OpenAi, Groq, Speaches, Custom];
+
+    /// <summary>The user enters the server address; <see cref="BaseUrl"/> is only the server's default.</summary>
+    public bool SelfHosted { get; init; }
+
+    /// <summary>The model is picked from the provider's <c>/models</c> list (ADR-018) instead of typed.</summary>
+    public bool ListsModels { get; init; } = true;
 
     public static ApiProviderPreset Find(string? id) => All.FirstOrDefault(p => p.Id == id) ?? Custom;
 }
@@ -372,6 +391,10 @@ public static class ApiTranscribers
     /// <summary>Whether a listed model can be offered at all: per-utterance or streaming.</summary>
     public static bool IsUsableModel(string id) =>
         OpenAiCompatibleTranscriber.IsTranscriptionModel(id) || OpenAiRealtimeTranscriber.IsStreamingModel(id);
+
+    /// <summary>A model whose server names its task (Speaches) is usable when it is speech recognition, whatever its id; otherwise by id.</summary>
+    public static bool IsUsableModel(ApiModelInfo model) =>
+        model.Task is { } task ? task == "automatic-speech-recognition" : IsUsableModel(model.Id);
 
     /// <summary>Streaming models connect here, so a wrong key or model is reported before listening starts.</summary>
     public static async Task<IApiTranscriber> CreateAsync(ApiTranscriberOptions options, ILogger? logger = null, CancellationToken ct = default) =>

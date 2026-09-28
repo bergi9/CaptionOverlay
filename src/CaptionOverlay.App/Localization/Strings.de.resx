@@ -198,6 +198,7 @@ Details stehen im Protokollordner.</value></data>
   <data name="Api_Provider" xml:space="preserve"><value>Anbieter</value></data>
   <data name="Api_CustomProvider" xml:space="preserve"><value>Benutzerdefiniert</value></data>
   <data name="Api_BaseUrl" xml:space="preserve"><value>Basis-URL</value></data>
+  <data name="Api_SelfHostedHint" xml:space="preserve"><value>Eigener Server: Gib seine Adresse mit /v1 ein, z. B. http://192.168.1.10:8000/v1 für Speaches. Ein Schlüssel ist nur nötig, wenn der Server einen verlangt.</value></data>
   <data name="Api_Model" xml:space="preserve"><value>Modell</value></data>
   <data name="Api_Key" xml:space="preserve"><value>API-Schlüssel</value></data>
   <data name="Api_SaveKey" xml:space="preserve"><value>Schlüssel speichern</value></data>

@@ -209,8 +209,7 @@ Details are in the log folder.</value></data>
   <data name="Api_Model" xml:space="preserve"><value>Model</value></data>
   <data name="Api_Key" xml:space="preserve"><value>API key</value></data>
   <data name="Api_SaveKey" xml:space="preserve"><value>Save key</value></data>
-  <data name="Api_KeyStored" xml:space="preserve"><value>A key is stored (encrypted for your Windows user).</value></data>
-  <data name="Api_NoKey" xml:space="preserve"><value>No key stored.</value></data>
+  <data name="Api_KeyHint" xml:space="preserve"><value>Saving an empty field removes the key. Keys are stored encrypted for your Windows user.</value></data>
   <data name="Api_TestConnection" xml:space="preserve"><value>Test connection</value></data>
   <data name="Api_Testing" xml:space="preserve"><value>Testing connection…</value></data>
   <data name="Api_Connected" xml:space="preserve"><value>✔ Connected — round trip {0:F0} ms</value></data>

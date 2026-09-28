@@ -205,8 +205,7 @@ Details stehen im Protokollordner.</value></data>
   <data name="Api_Model" xml:space="preserve"><value>Modell</value></data>
   <data name="Api_Key" xml:space="preserve"><value>API-Schlüssel</value></data>
   <data name="Api_SaveKey" xml:space="preserve"><value>Schlüssel speichern</value></data>
-  <data name="Api_KeyStored" xml:space="preserve"><value>Ein Schlüssel ist gespeichert (für deinen Windows-Benutzer verschlüsselt).</value></data>
-  <data name="Api_NoKey" xml:space="preserve"><value>Kein Schlüssel gespeichert.</value></data>
+  <data name="Api_KeyHint" xml:space="preserve"><value>Speichern mit leerem Feld entfernt den Schlüssel. Schlüssel werden für deinen Windows-Benutzer verschlüsselt gespeichert.</value></data>
   <data name="Api_TestConnection" xml:space="preserve"><value>Verbindung testen</value></data>
   <data name="Api_Testing" xml:space="preserve"><value>Verbindung wird getestet …</value></data>
   <data name="Api_Connected" xml:space="preserve"><value>✔ Verbunden – Antwortzeit {0:F0} ms</value></data>

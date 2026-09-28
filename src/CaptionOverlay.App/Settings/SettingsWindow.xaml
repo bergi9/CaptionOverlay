@@ -233,7 +233,7 @@
                             <Button DockPanel.Dock="Right" Content="{l:Loc Api_SaveKey}" Click="SaveKey_OnClick" Margin="6,0,0,0" />
                             <PasswordBox x:Name="ApiKeyBox" />
                         </DockPanel>
-                        <TextBlock Style="{StaticResource Hint}" Text="{Binding ApiKeyForDisplay}" />
+                        <TextBlock Style="{StaticResource Hint}" Text="{l:Loc Api_KeyHint}" />
                         <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Loc Api_Model}" />
                         <DockPanel Visibility="{Binding IsPresetProvider, Converter={StaticResource BoolToVis}}">
                             <Button DockPanel.Dock="Right" Content="{l:Loc Common_Refresh}" Command="{Binding RefreshApiModelsCommand}" Margin="6,0,0,0" />

@@ -2,19 +2,36 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using CaptionOverlay.App.Hotkeys;
+using CaptionOverlay.App.Infrastructure;
 
 namespace CaptionOverlay.App.Settings;
 
 public partial class SettingsWindow : Window
 {
     private readonly SettingsViewModel _vm;
+    private readonly ApiKeyField _keyField;
 
     public SettingsWindow(SettingsViewModel vm)
     {
         InitializeComponent();
         _vm = vm;
         DataContext = vm;
-        Closed += (_, _) => vm.Dispose();
+        _keyField = new ApiKeyField(ApiKeyBox);
+        _keyField.Show(vm.HasStoredApiKey);
+        vm.PropertyChanged += OnViewModelChanged;
+        Closed += (_, _) =>
+        {
+            vm.PropertyChanged -= OnViewModelChanged;
+            vm.Dispose();
+        };
+    }
+
+    private void OnViewModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SettingsViewModel.HasStoredApiKey))
+        {
+            _keyField.Show(_vm.HasStoredApiKey); // other provider, or the key was saved/removed
+        }
     }
 
     /// <summary>Selects a tab by its English name ("Models"), matching the TabItem's x:Name ("ModelsTab"); headers are localized.</summary>
@@ -39,8 +56,10 @@ public partial class SettingsWindow : Window
 
     private void SaveKey_OnClick(object sender, RoutedEventArgs e)
     {
-        _vm.SetApiKey(ApiKeyBox.Password);
-        ApiKeyBox.Clear();
+        if (_keyField.EnteredKey is { } key)
+        {
+            _vm.SetApiKey(key); // empty removes the key
+        }
     }
 
     /// <summary>Captures a key combination into the hotkey text box.</summary>

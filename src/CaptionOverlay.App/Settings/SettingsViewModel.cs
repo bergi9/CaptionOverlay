@@ -270,7 +270,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     public bool IsUploadModel => !IsStreamingModel;
 
-    public string? ApiKeyForDisplay => Loc.Get(_app.GetApiKey(ApiProvider ?? "") is { Length: > 0 } ? "Api_KeyStored" : "Api_NoKey");
+    /// <summary>Whether the selected provider has a saved key; the key box then shows dots (never the key).</summary>
+    public bool HasStoredApiKey => _app.GetApiKey(ApiProvider ?? "") is { Length: > 0 };
 
     private static string NativeName(CultureInfo culture)
     {
@@ -374,7 +375,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             var n when n.StartsWith("Transcripts", StringComparison.Ordinal) => SettingsSection.Transcripts,
             var n when n.StartsWith("Audio", StringComparison.Ordinal) => SettingsSection.Audio,
             var n when n.StartsWith("Engine", StringComparison.Ordinal) => SettingsSection.Engine,
-            var n when n.StartsWith("Api", StringComparison.Ordinal) && n != nameof(ApiTestResult) && n != nameof(ApiKeyForDisplay) => SettingsSection.Api,
+            var n when n.StartsWith("Api", StringComparison.Ordinal) && n != nameof(ApiTestResult) => SettingsSection.Api,
             var n when n.StartsWith("Overlay", StringComparison.Ordinal) => SettingsSection.Overlay,
             var n when n.StartsWith("Hotkeys", StringComparison.Ordinal) => SettingsSection.Hotkeys,
             _ => null,
@@ -458,7 +459,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IsCustomProvider));
         OnPropertyChanged(nameof(IsPresetProvider));
         OnPropertyChanged(nameof(IsSelfHostedProvider));
-        OnPropertyChanged(nameof(ApiKeyForDisplay));
+        OnPropertyChanged(nameof(HasStoredApiKey));
         ApiTestResult = null;
         _ = LoadApiModelsAsync();
     }
@@ -466,7 +467,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public void SetApiKey(string key)
     {
         _app.SetApiKey(ApiProvider ?? "", string.IsNullOrWhiteSpace(key) ? null : key.Trim());
-        OnPropertyChanged(nameof(ApiKeyForDisplay));
+        OnPropertyChanged(nameof(HasStoredApiKey));
         _ = LoadApiModelsAsync();
     }
 

@@ -94,12 +94,23 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
 
     partial void OnLanguageChanged(string? value) => UpdateCandidates();
 
-    partial void OnApiProviderChanged(string? value) => ApiBaseUrl = ApiProviderPreset.Find(value).BaseUrl;
+    partial void OnApiProviderChanged(string? value)
+    {
+        ApiBaseUrl = ApiProviderPreset.Find(value).BaseUrl;
+        OnPropertyChanged(nameof(HasStoredApiKey));
+    }
+
+    /// <summary>Whether the selected provider has a saved key; the key box then shows dots (never the key).</summary>
+    public bool HasStoredApiKey => _app.GetApiKey(ApiProvider ?? "") is { Length: > 0 };
 
     private string EffectiveBaseUrl(ApiProviderPreset preset) =>
         preset.SelfHosted && !string.IsNullOrWhiteSpace(ApiBaseUrl) ? ApiBaseUrl.Trim() : preset.BaseUrl;
 
-    public void SetApiKey(string key) => _app.SetApiKey(ApiProvider ?? "", string.IsNullOrWhiteSpace(key) ? null : key.Trim());
+    public void SetApiKey(string key)
+    {
+        _app.SetApiKey(ApiProvider ?? "", string.IsNullOrWhiteSpace(key) ? null : key.Trim());
+        OnPropertyChanged(nameof(HasStoredApiKey));
+    }
 
     private void UpdateCandidates()
     {

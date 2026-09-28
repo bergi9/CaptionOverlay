@@ -69,7 +69,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         Catalog = ModelCatalog.LoadBundled();
         ModelStore = new ModelStore();
         Downloader = new ModelDownloader(Http, ModelStore, loggers.CreateLogger<ModelDownloader>());
-        Pipeline = new CaptionPipeline(loggers);
+        Pipeline = new CaptionPipeline(loggers) { ShowSoundTags = Settings.Overlay.ShowSoundTags };
         OverlayViewModel = new OverlayViewModel(Settings.Overlay);
 
         _saveTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(400), DispatcherPriority.Background, (_, _) => SaveNow(), _dispatcher) { IsEnabled = false };
@@ -245,6 +245,7 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
         switch (section)
         {
             case SettingsSection.Overlay:
+                Pipeline.ShowSoundTags = Settings.Overlay.ShowSoundTags;
                 OverlayViewModel.ApplyStyle(Settings.Overlay);
                 RenderCaptions();
                 break;

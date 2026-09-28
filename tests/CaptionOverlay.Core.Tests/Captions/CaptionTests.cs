@@ -74,6 +74,15 @@ public class CaptionBufferTests
         buffer.GetRecentText(11).Should().Be("3 line 4", "prompts are cut at word boundaries");
     }
 
+    [Fact]
+    public void Prompt_leaves_out_sound_tags_shown_on_screen()
+    {
+        var buffer = new CaptionBuffer();
+        buffer.CommitFinal(Guid.NewGuid(), "Guten Abend.", TimeSpan.Zero, TimeSpan.Zero);
+        buffer.CommitFinal(Guid.NewGuid(), "[Musik]", TimeSpan.Zero, TimeSpan.Zero);
+        buffer.CommitFinal(Guid.NewGuid(), "(Applaus) Willkommen zurück.", TimeSpan.Zero, TimeSpan.Zero);
+        buffer.GetRecentText(200).Should().Be("Guten Abend. Willkommen zurück.");
+    }
 }
 
 public class HallucinationFilterTests
@@ -183,6 +192,50 @@ public class HallucinationFilterTests
     [InlineData("Die Die Mauer fiel 1989.")]
     public void Leaves_ordinary_repetition_alone(string text) =>
         HallucinationFilter.CollapseLoops(text).Should().Be(text);
+
+    private FilterResult ApplyKeepingTags(string text, float rms = 0.05f) =>
+        _filter.Apply(new FilterInput(text, "de", null, rms, null, KeepSoundTags: true));
+
+    [Theory]
+    [InlineData("[Musik]")]
+    [InlineData("(Applaus)")]
+    [InlineData("*lacht*")]
+    [InlineData("<laughs>")]
+    [InlineData("♪ ♪")]
+    [InlineData("[Musik] Guten Abend, meine Damen und Herren.")]
+    public void Keeps_sound_tags_when_asked(string text)
+    {
+        var result = ApplyKeepingTags(text);
+        result.Keep.Should().BeTrue();
+        result.Text.Should().Be(text);
+    }
+
+    [Fact]
+    public void Sound_tags_are_still_filtered_for_silence_and_known_hallucinations()
+    {
+        ApplyKeepingTags("[Musik]", rms: 0f).Reason.Should().Be("no audible signal");
+        ApplyKeepingTags("(Untertitel im Auftrag des ZDF, 2021)").Keep.Should().BeFalse();
+        ApplyKeepingTags("[Musik] [Musik] [Musik] [Musik]").Text.Should().Be("[Musik]");
+        ApplyKeepingTags("  ...  ").Keep.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("[BLANK_AUDIO]")] // whisper.cpp's marker for empty audio (seen on real desktop audio)
+    [InlineData("[ Silence ]")]
+    [InlineData("(Stille)")]
+    public void Markers_that_describe_no_sound_are_removed_even_when_tags_are_kept(string marker)
+    {
+        ApplyKeepingTags(marker).Keep.Should().BeFalse();
+        ApplyKeepingTags($"shipped quicker, {marker}").Text.Should().Be("shipped quicker,");
+    }
+
+    [Fact]
+    public void Partials_keep_sound_tags_only_when_asked()
+    {
+        _filter.CleanPartial("[Musik] Hallo").Should().Be("Hallo");
+        _filter.CleanPartial("[Musik] Hallo", keepSoundTags: true).Should().Be("[Musik] Hallo");
+        _filter.CleanPartial("♪", keepSoundTags: true).Should().Be("♪");
+    }
 
     [Fact]
     public void Partials_have_loops_collapsed_too() =>

@@ -178,8 +178,14 @@ public sealed class CaptionBuffer
             int length = 0;
             for (int i = _committed.Count - 1; i >= 0 && length < maxChars; i--)
             {
-                parts.Insert(0, _committed[i].Text);
-                length += _committed[i].Text.Length + 1;
+                // Sound tags shown on screen stay out of the prompt: they would nudge Whisper to write tags over speech.
+                string spoken = HallucinationFilter.StripTags(_committed[i].Text);
+                if (spoken.Length == 0)
+                {
+                    continue;
+                }
+                parts.Insert(0, spoken);
+                length += spoken.Length + 1;
             }
             string text = string.Join(' ', parts);
             if (text.Length <= maxChars)

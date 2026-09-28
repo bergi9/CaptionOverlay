@@ -202,6 +202,9 @@ public sealed class OverlaySettings
     /// <summary>Slide lines in and out instead of switching instantly (independent of the Windows animation setting).</summary>
     public bool AnimateLines { get; set; } = true;
 
+    /// <summary>Show sound tags the model writes ([Music], (Applause), ♪) instead of removing them; helps deaf viewers.</summary>
+    public bool ShowSoundTags { get; set; }
+
     /// <summary>Saved positions per monitor device name.</summary>
     public Dictionary<string, OverlayPlacement> Placements { get; set; } = [];
 

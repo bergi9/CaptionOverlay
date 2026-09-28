@@ -310,6 +310,8 @@
                         <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Loc Overlay_FadeTimeout, Value={Binding OverlayFadeTimeoutSec}}" />
                         <Slider Minimum="0" Maximum="60" Value="{Binding OverlayFadeTimeoutSec}" IsSnapToTickEnabled="True" TickFrequency="1" />
                         <CheckBox Content="{l:Loc Overlay_AnimateLines}" IsChecked="{Binding OverlayAnimateLines}" Margin="0,8,0,0" />
+                        <CheckBox Content="{l:Loc Overlay_ShowSoundTags}" IsChecked="{Binding OverlayShowSoundTags}" Margin="0,8,0,0" />
+                        <TextBlock Style="{StaticResource Hint}" Text="{l:Loc Overlay_ShowSoundTagsHint}" />
                         <TextBlock Style="{StaticResource Hint}" Text="{l:Loc Overlay_FullscreenHint}" />
                     </StackPanel>
                 </ScrollViewer>

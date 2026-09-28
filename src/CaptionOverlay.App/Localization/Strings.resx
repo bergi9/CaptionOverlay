@@ -239,6 +239,8 @@ Details are in the log folder.</value></data>
   <data name="Overlay_LinesShown" xml:space="preserve"><value>Lines shown: {0:F0}</value></data>
   <data name="Overlay_FadeTimeout" xml:space="preserve"><value>Hide after {0:F0} s without speech (0 = never)</value></data>
   <data name="Overlay_AnimateLines" xml:space="preserve"><value>Animate line changes (new lines slide in, old ones scroll out)</value></data>
+  <data name="Overlay_ShowSoundTags" xml:space="preserve"><value>Show sounds such as [Music], (Applause) or ♪</value></data>
+  <data name="Overlay_ShowSoundTagsHint" xml:space="preserve"><value>Helpful for deaf and hard-of-hearing viewers. Whether sounds are written at all depends on the model and the server.</value></data>
   <data name="Overlay_FullscreenHint" xml:space="preserve"><value>The overlay cannot appear above games in exclusive fullscreen mode. Use borderless or windowed fullscreen.</value></data>
 
   <!-- Hotkeys -->

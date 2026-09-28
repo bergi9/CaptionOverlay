@@ -11,7 +11,8 @@ public sealed record FilterInput(
     string? Language,
     string? PreviousCommitted,
     float AudioRms,
-    float? AverageProbability);
+    float? AverageProbability,
+    bool KeepSoundTags = false);
 
 public sealed record FilterResult(bool Keep, string Text, string? Reason)
 {
@@ -45,8 +46,9 @@ public sealed partial class HallucinationFilter
 
     public FilterResult Apply(FilterInput input)
     {
-        string text = StripTags(input.Text);
-        if (!HasLetters(text))
+        // Sound tags ([Musik], (Applaus), ♪) help deaf viewers, so they can be kept; a tag-only line then counts as content.
+        string text = input.KeepSoundTags ? StripNonSoundTags(input.Text) : StripTags(input.Text);
+        if (!HasContent(text))
         {
             return FilterResult.Drop("empty or tags only");
         }
@@ -88,11 +90,11 @@ public sealed partial class HallucinationFilter
         return new FilterResult(true, text, null);
     }
 
-    /// <summary>Light cleanup for tentative text: strips tags and collapses loops, keeps everything else.</summary>
-    public string CleanPartial(string text)
+    /// <summary>Light cleanup for tentative text: strips tags (unless kept) and collapses loops, keeps everything else.</summary>
+    public string CleanPartial(string text, bool keepSoundTags = false)
     {
-        string stripped = CollapseLoops(StripTags(text));
-        return HasLetters(stripped) ? stripped : "";
+        string cleaned = CollapseLoops(keepSoundTags ? StripNonSoundTags(text) : StripTags(text));
+        return HasContent(cleaned) ? cleaned : "";
     }
 
     /// <summary>
@@ -164,6 +166,10 @@ public sealed partial class HallucinationFilter
         _phrases.Values.SelectMany(list => list).Any(phrase =>
             normalized == phrase || (phrase.Length >= 15 && normalized.Contains(phrase, StringComparison.Ordinal)));
 
+    /// <summary>Removes only tags that describe no sound: whisper.cpp's [BLANK_AUDIO] and "silence" markers.</summary>
+    internal static string StripNonSoundTags(string text) =>
+        WhitespaceRegex().Replace(NonSoundTagRegex().Replace(text, " "), " ").Trim();
+
     internal static string StripTags(string text)
     {
         string result = TagRegex().Replace(text, " ");
@@ -190,6 +196,9 @@ public sealed partial class HallucinationFilter
 
     private static bool HasLetters(string text) => text.Any(char.IsLetterOrDigit);
 
+    /// <summary>Letters, digits or a music note (only present when sound tags are kept).</summary>
+    private static bool HasContent(string text) => text.Any(c => char.IsLetterOrDigit(c) || c is '♪' or '♫');
+
     private static Dictionary<string, IReadOnlyList<string>> LoadEmbedded()
     {
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("CaptionOverlay.Core.Captions.hallucinations.json")
@@ -204,6 +213,9 @@ public sealed partial class HallucinationFilter
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex WhitespaceRegex();
+
+    [GeneratedRegex(@"[\[\(\*<]\s*(?:BLANK_AUDIO|silence|stille|no speech|keine sprache)\s*[\]\)\*>]", RegexOptions.IgnoreCase)]
+    private static partial Regex NonSoundTagRegex();
 
     // A group of 1–10 characters followed by at least three copies of itself.
     [GeneratedRegex(@"(.{1,10}?)\1{3,}")]

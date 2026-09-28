@@ -237,6 +237,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] public partial double OverlayLinesShown { get; set; }
     [ObservableProperty] public partial double OverlayFadeTimeoutSec { get; set; }
     [ObservableProperty] public partial bool OverlayAnimateLines { get; set; }
+    [ObservableProperty] public partial bool OverlayShowSoundTags { get; set; }
 
     // ───── Hotkeys ─────
     [ObservableProperty] public partial string HotkeysToggleEditMode { get; set; } = "";
@@ -325,6 +326,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         OverlayLinesShown = o.LinesShown;
         OverlayFadeTimeoutSec = o.FadeTimeoutSec;
         OverlayAnimateLines = o.AnimateLines;
+        OverlayShowSoundTags = o.ShowSoundTags;
 
         var h = _s.Hotkeys;
         HotkeysToggleEditMode = h.ToggleEditMode;
@@ -429,6 +431,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         o.LinesShown = (int)OverlayLinesShown;
         o.FadeTimeoutSec = OverlayFadeTimeoutSec;
         o.AnimateLines = OverlayAnimateLines;
+        o.ShowSoundTags = OverlayShowSoundTags;
 
         var h = _s.Hotkeys;
         h.ToggleEditMode = HotkeysToggleEditMode.Trim();

@@ -54,6 +54,9 @@ public sealed class CaptionPipeline : IAsyncDisposable
 
     public bool IsPaused => _paused;
 
+    /// <summary>Keep sound tags such as [Music] or (Applause) in captions; applies to the next result, no restart needed.</summary>
+    public bool ShowSoundTags { get; set; }
+
     public TimeSpan SessionTime => _session.Elapsed;
 
     /// <summary>Wall-clock time of <see cref="CaptionLine.Start"/> zero (the caption timeline starts when listening starts).</summary>
@@ -463,7 +466,8 @@ public sealed class CaptionPipeline : IAsyncDisposable
             result.DetectedLanguage,
             Captions.LastCommitted?.Text,
             HallucinationFilter.Rms(final.Samples),
-            result.AverageProbability));
+            result.AverageProbability,
+            ShowSoundTags));
         if (!verdict.Keep)
         {
             _logger.LogDebug("Dropped final {Id}: {Reason}", final.UtteranceId.ToString()[..8], verdict.Reason);
@@ -482,7 +486,7 @@ public sealed class CaptionPipeline : IAsyncDisposable
 
     private void OnPartialCompleted(PartialSnapshot partial, TranscriptionResult result)
     {
-        Captions.ApplyPartial(partial.UtteranceId, partial.Sequence, _filter.CleanPartial(result.Text));
+        Captions.ApplyPartial(partial.UtteranceId, partial.Sequence, _filter.CleanPartial(result.Text, ShowSoundTags));
     }
 
     private void OnJobFailed(SegmenterEvent job, TranscriptionException error, bool willRetry)

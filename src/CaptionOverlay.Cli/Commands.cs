@@ -24,7 +24,7 @@ public static class Commands
           segment <in.wav> [--no-vad]           Print utterance boundaries found by VAD + segmenter
           live [--model <id|path>] [--lang de] [--wav <file> [--realtime]] [--partial-model <id|path>]
                [--api groq|openai|speaches|custom --api-key <key> --api-model <m> --api-url <url>]
-               [--no-vad] [--no-partials] [--cpu] [--srt <file>] [--normal-priority]
+               [--no-vad] [--no-partials] [--sound-tags] [--cpu] [--srt <file>] [--normal-priority]
                                                 Live captions from loopback (or a WAV file) to the console
           bench --model <id|path> [--cpu]       Benchmark a model on the bundled fixture (real-time factor)
           models                                List catalog models and what is installed
@@ -250,7 +250,7 @@ public static class Commands
             Scheduler = new SchedulerOptions { MinPartialInterval = api && !streaming ? TimeSpan.FromSeconds(1.5) : TimeSpan.Zero },
         };
 
-        await using var pipeline = new CaptionPipeline(loggers);
+        await using var pipeline = new CaptionPipeline(loggers) { ShowSoundTags = args.Has("sound-tags") };
         var console = new ConsoleCaptionView();
         Core.Export.SrtWriter? srt = args.Get("srt") is { } srtPath ? new Core.Export.SrtWriter(srtPath) : null;
         pipeline.Captions.Changed += (_, e) => console.Render(pipeline.Captions, e);

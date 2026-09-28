@@ -67,6 +67,7 @@ Test machine for the ✅ items: Windows 11 Pro 26200, RTX 4090, 16 cores, 3840×
 - ✅ Streaming (Realtime API, ADR-019): `RealtimeTranscriberTests` against a local fake of the protocol (partials stream only new audio, trailing silence kept, forced cut resent, cancel → clear without leaking text, reconnect after a drop, rejected session/key fatal); live: gpt-realtime-whisper and gpt-live-transcribe through the pipeline, final text 0.5–0.7 s after sentence end. ⏳ Real system audio in the app with a streaming model.
 - ✅ Speaches (ADR-025): model list filtered by its `task` field (stub test); live against a v0.8.2 server: all 5 live tests pass with `Systran/faster-whisper-small` (German clips 12.5 %, pipeline 14.1 %). ⏳ Wizard with Speaches.
 - ✅ Repetition loops (ADR-026): `HallucinationFilterTests` with loops recorded from real desktop audio; that recording rerun: loops dropped, other models' text unchanged.
+- ✅ Sound tags (ADR-027): kept/removed per setting, tag-only captions, `[BLANK_AUDIO]`/silence markers always removed, tags left out of the prompt (unit tests). ⏳ Real audio with music and the checkbox in the app.
 - ⏳ Groq key; unplug network while running.
 
 ## M8 — Settings, wizard, export

@@ -223,7 +223,7 @@ public record TranscriptionResult(
 - Provider presets (user-editable, check current model names at implementation time):
   - OpenAI: base `https://api.openai.com/v1`, model `whisper-1` (newer transcription models may exist)
   - Groq: base `https://api.groq.com/openai/v1`, model `whisper-large-v3-turbo`
-  - Speaches (self-hosted): base entered by the user (default `http://localhost:8000/v1`), model `Systran/faster-whisper-small`; models listed by their `task` (ADR-025)
+  - Speaches (self-hosted): base entered by the user (default `http://localhost:8000/v1`), no default model (the server's first listed model until one is picked); models listed by their `task` (ADR-025)
   - WhisperLiveKit (self-hosted, streaming): base entered by the user (default `http://localhost:8000/v1`), WebSocket `/asr`, one session per utterance (ADR-028)
   - Custom: any base URL (e.g., a self-hosted whisper.cpp server)
 - **Finals only** by default (partials would multiply cost ~5-10×). Advanced toggle to enable partials with a minimum interval of 1.5 s.

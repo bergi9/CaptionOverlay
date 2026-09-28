@@ -174,7 +174,7 @@ public static class Commands
     private static Task<IApiTranscriber> CreateApiTranscriberAsync(CliArgs args, bool partials, string? language, ILogger? logger, CancellationToken ct)
     {
         var preset = ApiProviderPreset.Find(args.Get("api"));
-        return ApiTranscribers.CreateAsync(new ApiTranscriberOptions
+        return CreateAsync(new ApiTranscriberOptions
         {
             BaseUrl = args.Get("api-url") ?? preset.BaseUrl,
             Model = args.Get("api-model") ?? preset.DefaultModel,
@@ -184,6 +184,10 @@ public static class Commands
             EnablePartials = partials,
             Language = language,
         }, logger, ct);
+
+        // Without --api-model a self-hosted server's first model is used (they have no fixed default).
+        static async Task<IApiTranscriber> CreateAsync(ApiTranscriberOptions options, ILogger? logger, CancellationToken ct) =>
+            await ApiTranscribers.CreateAsync(await ApiTranscribers.WithServerModelAsync(options, ct), logger, ct);
     }
 
     private static async Task<int> ApiModelsAsync(CliArgs args, CancellationToken ct)

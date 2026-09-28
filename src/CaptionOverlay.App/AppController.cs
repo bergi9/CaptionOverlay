@@ -430,7 +430,9 @@ public sealed partial class AppController : ObservableObject, IAsyncDisposable
                 Language = EffectiveLanguage(),
             };
             // Streaming models connect here, so a wrong key or model shows up as a start error.
-            return async ct => new TranscriberSet(await ApiTranscribers.CreateAsync(options, _loggers.CreateLogger("ApiTranscriber"), ct));
+            // Self-hosted providers have no default model: without a saved one, the server's first model is used.
+            return async ct => new TranscriberSet(await ApiTranscribers.CreateAsync(
+                await ApiTranscribers.WithServerModelAsync(options, ct), _loggers.CreateLogger("ApiTranscriber"), ct));
         }
 
         var model = ModelStore.Resolve(engine.ModelId, Catalog)

@@ -160,12 +160,33 @@ public sealed class WhisperLiveKitTranscriberTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Without_a_model_the_first_one_the_server_lists_is_used()
+    {
+        var options = new ApiTranscriberOptions
+        {
+            BaseUrl = _server.BaseUrl,
+            Model = ApiProviderPreset.WhisperLiveKit.DefaultModel,
+            ApiKey = "wlk-test",
+            ProviderName = "WhisperLiveKit",
+            ProviderId = ApiProviderPreset.WhisperLiveKit.Id,
+        };
+        options.Model.Should().BeEmpty("self-hosted servers have no fixed default model");
+        options.DisplayName.Should().Be("WhisperLiveKit");
+
+        var resolved = await ApiTranscribers.WithServerModelAsync(options, Ct);
+        resolved.Model.Should().Be("whisper-small");
+        resolved.DisplayName.Should().Be("WhisperLiveKit – whisper-small");
+        (await ApiTranscribers.WithServerModelAsync(resolved with { Model = "kept" }, Ct)).Model.Should().Be("kept");
+    }
+
+    [Fact]
     public void WhisperLiveKit_is_a_streaming_self_hosted_provider()
     {
         var p = ApiProviderPreset.Find("whisperlivekit");
         p.Should().BeSameAs(ApiProviderPreset.WhisperLiveKit);
         p.Streaming.Should().BeTrue();
         p.SelfHosted.Should().BeTrue();
+        ApiProviderPreset.Speaches.DefaultModel.Should().BeEmpty();
         ApiTranscribers.IsStreaming("whisperlivekit", "whisper-small").Should().BeTrue();
         ApiTranscribers.IsStreaming("speaches", "Systran/faster-whisper-small").Should().BeFalse();
         ApiTranscribers.IsStreaming("openai", "gpt-realtime-whisper").Should().BeTrue();
@@ -260,6 +281,15 @@ public sealed class WhisperLiveKitTranscriberTests : IAsyncDisposable
         {
             Authorization = ctx.Request.Headers["Authorization"];
             Query = ctx.Request.Url?.Query;
+            if (ctx.Request.Url?.AbsolutePath == "/v1/models")
+            {
+                // What /v1/models of WhisperLiveKit 0.2.26 reports: the one model the server runs.
+                byte[] body = Encoding.UTF8.GetBytes("""{"object":"list","data":[{"id":"whisper-small","object":"model","owned_by":"whisperlivekit"}]}""");
+                ctx.Response.ContentType = "application/json";
+                await ctx.Response.OutputStream.WriteAsync(body);
+                ctx.Response.Close();
+                return;
+            }
             if (ctx.Request.Url?.AbsolutePath != "/asr" || !ctx.Request.IsWebSocketRequest)
             {
                 ctx.Response.StatusCode = 404;

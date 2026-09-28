@@ -43,7 +43,7 @@ public sealed class WhisperLiveKitTranscriber : IApiTranscriber, IStreamingTrans
         _endpoint = StreamEndpoint(options.BaseUrl, options.Language);
     }
 
-    public string DisplayName => $"{_options.ProviderName} – {_options.Model}";
+    public string DisplayName => _options.DisplayName;
 
     public string RuntimeDescription => $"API ({_options.ProviderName}, streaming)";
 

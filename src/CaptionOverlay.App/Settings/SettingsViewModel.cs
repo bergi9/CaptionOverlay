@@ -543,9 +543,15 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                 : OpenAiRealtimeTranscriber.IsStreamingModel(id) ? new Choice(id, () => Loc.Format("Api_ModelStreaming", id))
                 : new Choice(id, id));
         }
-        _selectedApiModel = ApiModelChoices.FirstOrDefault(c => c.Value == current);
+        // Self-hosted providers have no default model: until one is picked, use the first the server lists.
+        string? firstOfServer = current.Length == 0 && available is { Count: > 0 } ? available[0] : null;
+        _selectedApiModel = ApiModelChoices.FirstOrDefault(c => c.Value == (firstOfServer ?? current));
         OnPropertyChanged(nameof(SelectedApiModel));
         _loading = wasLoading;
+        if (firstOfServer is not null)
+        {
+            ApiModel = firstOfServer; // saved like a pick, without the connection test a pick runs
+        }
     }
 
     [RelayCommand]
@@ -557,14 +563,14 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             // Streaming models open their session in CreateAsync; that handshake is the test.
-            await using var t = await ApiTranscribers.CreateAsync(new ApiTranscriberOptions
+            await using var t = await ApiTranscribers.CreateAsync(await ApiTranscribers.WithServerModelAsync(new ApiTranscriberOptions
             {
                 BaseUrl = string.IsNullOrWhiteSpace(ApiBaseUrl) ? preset.BaseUrl : ApiBaseUrl,
                 Model = string.IsNullOrWhiteSpace(ApiModel) ? preset.DefaultModel : ApiModel,
                 ApiKey = _app.GetApiKey(ApiProvider ?? ""),
                 ProviderName = preset.Name,
                 ProviderId = preset.Id,
-            });
+            }, CancellationToken.None));
             var latency = t is IStreamingTranscriber ? sw.Elapsed : await t.TestConnectionAsync(CancellationToken.None);
             ApiTestResult = Loc.Format("Api_Connected", latency.TotalMilliseconds);
         }

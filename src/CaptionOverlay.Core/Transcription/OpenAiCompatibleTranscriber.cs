@@ -38,6 +38,8 @@ public sealed record ApiTranscriberOptions
     /// <summary>Maximum prompt length sent to the API (OpenAI caps prompts at ~224 tokens).</summary>
     public int MaxPromptChars { get; init; } = 200;
 
+    /// <summary>"Provider – model", or just the provider while no model is known.</summary>
+    public string DisplayName => Model.Length > 0 ? $"{ProviderName} – {Model}" : ProviderName;
 }
 
 /// <summary>
@@ -70,7 +72,7 @@ public sealed class OpenAiCompatibleTranscriber : IApiTranscriber
 
     public Uri Endpoint { get; }
 
-    public string DisplayName => $"{_options.ProviderName} – {_options.Model}";
+    public string DisplayName => _options.DisplayName;
 
     public string RuntimeDescription => $"API ({_options.ProviderName})";
 
@@ -372,15 +374,16 @@ public sealed record ApiProviderPreset(string Id, string Name, string BaseUrl, s
 
     /// <summary>
     /// Self-hosted Speaches (faster-whisper). Per-utterance upload, not its Realtime API: that one only transcribes the whole
-    /// buffer at the commit (no deltas) after resampling our audio from 24 kHz, see ADR-025.
+    /// buffer at the commit (no deltas) after resampling our audio from 24 kHz, see ADR-025. No default model: each server
+    /// has its own, so the first one it lists is used until the user picks another.
     /// </summary>
-    public static readonly ApiProviderPreset Speaches = new("speaches", "Speaches", "http://localhost:8000/v1", "Systran/faster-whisper-small") { SelfHosted = true };
+    public static readonly ApiProviderPreset Speaches = new("speaches", "Speaches", "http://localhost:8000/v1", "") { SelfHosted = true };
 
     /// <summary>
     /// Self-hosted WhisperLiveKit: streams over its own WebSocket (<c>/asr</c>), text appears while someone speaks (ADR-028).
     /// The model is chosen on the server; <c>/v1/models</c> only reports it.
     /// </summary>
-    public static readonly ApiProviderPreset WhisperLiveKit = new("whisperlivekit", "WhisperLiveKit", "http://localhost:8000/v1", "whisper-small")
+    public static readonly ApiProviderPreset WhisperLiveKit = new("whisperlivekit", "WhisperLiveKit", "http://localhost:8000/v1", "")
     {
         SelfHosted = true,
         Streaming = true,
@@ -412,6 +415,25 @@ public static class ApiTranscribers
     /// <summary>A model whose server names its task (Speaches) is usable when it is speech recognition, whatever its id; otherwise by id.</summary>
     public static bool IsUsableModel(ApiModelInfo model) =>
         model.Task is { } task ? task == "automatic-speech-recognition" : IsUsableModel(model.Id);
+
+    /// <summary>
+    /// The first model the server offers for captions, for self-hosted providers without a default model (no fixed
+    /// default fits every server). Null if the list is empty; throws like <see cref="OpenAiCompatibleTranscriber.ListModelsAsync"/>.
+    /// </summary>
+    public static async Task<string?> FirstServerModelAsync(ApiTranscriberOptions options, CancellationToken ct)
+    {
+        var preset = ApiProviderPreset.Find(options.ProviderId);
+        await using var list = new OpenAiCompatibleTranscriber(options with { Model = "list" });
+        var models = await list.ListModelsAsync(ct).ConfigureAwait(false);
+        return models.FirstOrDefault(m => preset.Streaming || IsUsableModel(m))?.Id;
+    }
+
+    /// <summary>Options with the server's first model filled in when none is set (self-hosted providers).</summary>
+    public static async Task<ApiTranscriberOptions> WithServerModelAsync(ApiTranscriberOptions options, CancellationToken ct) =>
+        options.Model.Length == 0 && ApiProviderPreset.Find(options.ProviderId).ListsModels
+            && await FirstServerModelAsync(options, ct).ConfigureAwait(false) is { } model
+            ? options with { Model = model }
+            : options;
 
     /// <summary>Whether the provider/model streams audio while someone speaks (partials every 250 ms, live text).</summary>
     public static bool IsStreaming(string? providerId, string? model) =>

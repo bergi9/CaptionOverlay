@@ -242,15 +242,22 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
         try
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            // Streaming providers connect in CreateAsync; that handshake is the test.
-            await using var t = await ApiTranscribers.CreateAsync(new ApiTranscriberOptions
+            var options = await ApiTranscribers.WithServerModelAsync(new ApiTranscriberOptions
             {
                 BaseUrl = EffectiveBaseUrl(preset),
                 Model = preset.DefaultModel,
                 ApiKey = _app.GetApiKey(preset.Id),
                 ProviderName = preset.Name,
                 ProviderId = preset.Id,
-            });
+            }, CancellationToken.None);
+            if (options.Model != _app.Settings.Api.Model)
+            {
+                // A self-hosted server has no default model: keep the first one it offers.
+                _app.Settings.Api.Model = options.Model;
+                _app.SaveNow();
+            }
+            // Streaming providers connect in CreateAsync; that handshake is the test.
+            await using var t = await ApiTranscribers.CreateAsync(options);
             var latency = t is IStreamingTranscriber ? sw.Elapsed : await t.TestConnectionAsync(CancellationToken.None);
             ApiResult = Loc.Format("Api_Connected", latency.TotalMilliseconds);
         }

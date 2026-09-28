@@ -73,6 +73,7 @@ public class CaptionBufferTests
         buffer.GetRecentText(13).Should().Be("line 3 line 4");
         buffer.GetRecentText(11).Should().Be("3 line 4", "prompts are cut at word boundaries");
     }
+
 }
 
 public class HallucinationFilterTests
@@ -136,4 +137,54 @@ public class HallucinationFilterTests
         Apply("irgendwas", rms: 0.003f, prob: 0.2f).Keep.Should().BeFalse();
         Apply("irgendwas", rms: 0.1f, prob: 0.2f).Keep.Should().BeTrue();
     }
+
+    private static string Repeat(string unit, int times) => string.Concat(Enumerable.Repeat(unit, times));
+
+    // Loops a small German model produced on real desktop audio (Speaches, 2026-09).
+    public static TheoryData<string> LoopOnlyResults =>
+    [
+        Repeat("a lot ", 19).Trim(),
+        "do you " + Repeat("do ", 60).Trim(),
+        "The way " + Repeat("untuk ", 300).Trim(),
+        Repeat("'u", 84),
+    ];
+
+    [Theory]
+    [MemberData(nameof(LoopOnlyResults))]
+    public void Drops_results_that_are_mostly_a_repetition_loop(string text) =>
+        Apply(text).Reason.Should().Be("repetition loop");
+
+    [Fact]
+    public void Collapses_a_loop_at_the_end_of_real_speech_to_one_occurrence()
+    {
+        var result = Apply("Wir wollen jedes Jahr Millionen Gallonen an Treibstoff zu sparen zu sparen zu sparen zu sparen zu");
+        result.Keep.Should().BeTrue();
+        result.Text.Should().Be("Wir wollen jedes Jahr Millionen Gallonen an Treibstoff zu sparen");
+    }
+
+    [Fact]
+    public void A_short_repetition_is_collapsed_not_dropped()
+    {
+        var result = Apply("Nein nein nein nein.");
+        result.Keep.Should().BeTrue();
+        result.Text.Should().Be("Nein");
+    }
+
+    [Fact]
+    public void Loops_compare_words_without_case_and_punctuation()
+    {
+        HallucinationFilter.CollapseLoops("Er sagte: Nein, nein. Nein! Nein? Und ging.").Should().Be("Er sagte: Nein, Und ging.");
+    }
+
+    [Theory]
+    [InlineData("Nein, nein, nein.")] // three times is still speech
+    [InlineData("Das kostet 1000000000 Euro.")] // digits are not a character loop
+    [InlineData("Hmmmm, hahaha, das ist lustig.")] // short character repeats stay
+    [InlineData("Die Die Mauer fiel 1989.")]
+    public void Leaves_ordinary_repetition_alone(string text) =>
+        HallucinationFilter.CollapseLoops(text).Should().Be(text);
+
+    [Fact]
+    public void Partials_have_loops_collapsed_too() =>
+        _filter.CleanPartial("Guten Abend " + Repeat("na ", 10)).Should().Be("Guten Abend na");
 }

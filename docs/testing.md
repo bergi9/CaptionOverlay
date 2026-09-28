@@ -70,6 +70,7 @@ Test machine for the ✅ items: Windows 11 Pro 26200, RTX 4090, 16 cores, 3840×
 - ✅ Sound tags (ADR-027): kept/removed per setting, tag-only captions, `[BLANK_AUDIO]`/silence markers always removed, tags left out of the prompt (unit tests). ⏳ Real audio with music and the checkbox in the app.
 - ✅ WhisperLiveKit (ADR-028): `WhisperLiveKitTranscriberTests` against a fake `/asr` (one session per utterance, only new stable audio, WAV header for ffmpeg servers, forced cut and dropped session resent, cancel closes, wrong key fatal, spare session). Live (Ryzen server, whisper-small): all 5 live tests pass (clips 14.1 %, pipeline 14.8 %); German desktop recording in real time: final caption median 2.1 s after the utterance end. ⏳ The app itself with system audio.
 - API key field (Settings and wizard, `ApiKeyField`): a saved key shows as a row of dots (placeholder, never the key); typing, pasting or Backspace/Delete replaces it; Save with the untouched dots changes nothing, Save with an empty field removes the key; switching provider shows that provider's state. Build only. ⏳ Clicked by hand.
+- ✅ URL and model per API provider (`ApiSettings.Providers`): switching provider restores that provider's saved URL and model (defaults the first time); settings from before keep the active provider's values; round trip through settings.json (`SettingsTests`). ⏳ Switching in the app by hand.
 - ⏳ Groq key; unplug network while running.
 
 ## M8 — Settings, wizard, export

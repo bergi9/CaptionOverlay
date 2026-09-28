@@ -96,7 +96,7 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
 
     partial void OnApiProviderChanged(string? value)
     {
-        ApiBaseUrl = ApiProviderPreset.Find(value).BaseUrl;
+        ApiBaseUrl = _app.Settings.Api.SavedFor(ApiProviderPreset.Find(value)).BaseUrl;
         OnPropertyChanged(nameof(HasStoredApiKey));
     }
 
@@ -185,7 +185,8 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
             var preset = ApiProviderPreset.Find(ApiProvider);
             _app.Settings.Api.Provider = preset.Id;
             _app.Settings.Api.BaseUrl = EffectiveBaseUrl(preset);
-            _app.Settings.Api.Model = preset.DefaultModel;
+            _app.Settings.Api.Model = _app.Settings.Api.SavedFor(preset).Model;
+            _app.Settings.Api.RememberActive();
         }
         _app.SaveNow();
     }
@@ -265,6 +266,7 @@ public sealed partial class FirstRunViewModel : ObservableObject, IDisposable
             {
                 // A self-hosted server has no default model: keep the first one it offers.
                 _app.Settings.Api.Model = options.Model;
+                _app.Settings.Api.RememberActive();
                 _app.SaveNow();
             }
             // Streaming providers connect in CreateAsync; that handshake is the test.

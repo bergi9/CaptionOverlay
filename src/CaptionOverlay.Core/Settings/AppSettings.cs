@@ -112,6 +112,12 @@ public sealed class AppSettings
         }
         o.FadeTimeoutSec = Math.Clamp(o.FadeTimeoutSec, 0, 600);
         o.Placements ??= [];
+
+        Api.Providers ??= [];
+        if (!Api.Providers.ContainsKey(Api.Provider))
+        {
+            Api.RememberActive(); // settings from before per-provider values: keep the active provider's URL and model
+        }
         return this;
     }
 }
@@ -170,7 +176,29 @@ public sealed class ApiSettings
 
     public bool EnablePartials { get; set; }
 
+    /// <summary>
+    /// URL and model per provider id, so switching providers (e.g. to Speaches and back to WhisperLiveKit) keeps each
+    /// one's values. <see cref="BaseUrl"/> and <see cref="Model"/> above are the active provider's.
+    /// </summary>
+    public Dictionary<string, ApiProviderSettings> Providers { get; set; } = [];
+
     // The API key is deliberately not here: it lives DPAPI-encrypted in secrets.dat (SecretStore).
+
+    /// <summary>Stores the active provider's URL and model under its id.</summary>
+    public void RememberActive() => Providers[Provider] = new ApiProviderSettings { BaseUrl = BaseUrl, Model = Model };
+
+    /// <summary>The saved URL and model of a provider, or its defaults.</summary>
+    public ApiProviderSettings SavedFor(ApiProviderPreset preset) =>
+        Providers.TryGetValue(preset.Id, out var saved) && !string.IsNullOrWhiteSpace(saved.BaseUrl)
+            ? saved
+            : new ApiProviderSettings { BaseUrl = preset.BaseUrl, Model = preset.DefaultModel };
+}
+
+public sealed class ApiProviderSettings
+{
+    public string BaseUrl { get; set; } = "";
+
+    public string Model { get; set; } = "";
 }
 
 public sealed class OverlaySettings

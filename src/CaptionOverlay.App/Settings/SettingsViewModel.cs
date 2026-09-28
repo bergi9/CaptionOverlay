@@ -427,6 +427,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         api.BaseUrl = ApiBaseUrl.Trim();
         api.Model = (ApiModel ?? "").Trim();
         api.EnablePartials = ApiEnablePartials;
+        api.RememberActive();
 
         var o = _s.Overlay;
         o.FontFamily = string.IsNullOrWhiteSpace(OverlayFontFamily) ? "Segoe UI" : OverlayFontFamily;
@@ -450,12 +451,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     private void OnProviderChanged()
     {
-        var preset = ApiProviderPreset.Find(ApiProvider);
-        if (preset != ApiProviderPreset.Custom)
-        {
-            ApiBaseUrl = preset.BaseUrl;
-            ApiModel = preset.DefaultModel;
-        }
+        // Each provider keeps its own URL and model (saved on every write-back); a new one starts from its defaults.
+        var saved = _s.Api.SavedFor(ApiProviderPreset.Find(ApiProvider));
+        ApiBaseUrl = saved.BaseUrl;
+        ApiModel = saved.Model;
         OnPropertyChanged(nameof(IsCustomProvider));
         OnPropertyChanged(nameof(IsPresetProvider));
         OnPropertyChanged(nameof(IsSelfHostedProvider));

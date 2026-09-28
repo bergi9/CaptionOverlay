@@ -1,6 +1,7 @@
 using CaptionOverlay.Core.Captions;
 using CaptionOverlay.Core.Export;
 using CaptionOverlay.Core.Settings;
+using CaptionOverlay.Core.Transcription;
 
 namespace CaptionOverlay.Core.Tests;
 
@@ -43,6 +44,32 @@ public sealed class SettingsTests : IDisposable
         var migrated = new SettingsStore(path).Load();
         migrated.SchemaVersion.Should().Be(AppSettings.CurrentSchemaVersion);
         migrated.Engine.Language.Should().Be("fr");
+    }
+
+    [Fact]
+    public void Each_provider_keeps_its_own_url_and_model()
+    {
+        Directory.CreateDirectory(_dir);
+        string path = Path.Combine(_dir, "settings.json");
+        // Settings written before per-provider values: only the active provider's URL and model.
+        File.WriteAllText(path, """
+            { "api": { "provider": "whisperlivekit", "baseUrl": "https://stt.example.org/v1", "model": "faster-whisper/small" } }
+            """);
+        var s = new SettingsStore(path).Load();
+        s.Api.SavedFor(ApiProviderPreset.WhisperLiveKit).BaseUrl.Should().Be("https://stt.example.org/v1");
+        s.Api.SavedFor(ApiProviderPreset.WhisperLiveKit).Model.Should().Be("faster-whisper/small");
+        s.Api.SavedFor(ApiProviderPreset.Speaches).BaseUrl.Should().Be(ApiProviderPreset.Speaches.BaseUrl, "a provider never set up starts from its defaults");
+
+        // Switch to Speaches with its own server, then back: WhisperLiveKit's values survive a save and reload.
+        s.Api.Provider = ApiProviderPreset.Speaches.Id;
+        s.Api.BaseUrl = "http://192.168.1.10:8000/v1";
+        s.Api.Model = "Systran/faster-whisper-small";
+        s.Api.RememberActive();
+        new SettingsStore(path).Save(s);
+        var reloaded = new SettingsStore(path).Load();
+        reloaded.Api.SavedFor(ApiProviderPreset.WhisperLiveKit).BaseUrl.Should().Be("https://stt.example.org/v1");
+        reloaded.Api.SavedFor(ApiProviderPreset.Speaches).BaseUrl.Should().Be("http://192.168.1.10:8000/v1");
+        reloaded.Api.SavedFor(ApiProviderPreset.Speaches).Model.Should().Be("Systran/faster-whisper-small");
     }
 
     public void Dispose()
